@@ -22,6 +22,9 @@ x-node-build-args: &node_build_args
   VITE_WEB_BASE_URL: ${VITE_WEB_BASE_URL:-}
   VITE_WEB_BASE_PATH: ${VITE_WEB_BASE_PATH:-}
 
+x-app-image-policy: &app_image_policy
+  pull_policy: ${PLANE_IMAGE_PULL_POLICY:-never}
+
 x-api-env: &api_env
   WEB_URL: ${WEB_URL:-http://localhost}
   DEBUG: ${PLANE_DEBUG:-0}
@@ -77,6 +80,7 @@ x-api-env: &api_env
 
 services:
   web:
+    <<: *app_image_policy
     image: *frontend_image
     build:
       context: .
@@ -87,6 +91,7 @@ services:
       - api
 
   admin:
+    <<: *app_image_policy
     image: *admin_image
     build:
       context: .
@@ -98,6 +103,7 @@ services:
       - web
 
   space:
+    <<: *app_image_policy
     image: *space_image
     build:
       context: .
@@ -109,6 +115,7 @@ services:
       - web
 
   live:
+    <<: *app_image_policy
     image: *live_image
     build:
       context: .
@@ -128,6 +135,7 @@ services:
       - plane-redis
 
   api:
+    <<: *app_image_policy
     image: *backend_image
     build:
       context: ./apps/api
@@ -146,6 +154,7 @@ services:
       - plane-mq
 
   worker:
+    <<: *app_image_policy
     image: *backend_image
     restart: unless-stopped
     command: ./bin/docker-entrypoint-worker.sh
@@ -160,6 +169,7 @@ services:
       - plane-mq
 
   beat-worker:
+    <<: *app_image_policy
     image: *backend_image
     restart: unless-stopped
     command: ./bin/docker-entrypoint-beat.sh
@@ -174,6 +184,7 @@ services:
       - plane-mq
 
   lark-connector:
+    <<: *app_image_policy
     image: *backend_image
     profiles:
       - lark
@@ -190,6 +201,7 @@ services:
       - plane-redis
 
   migrator:
+    <<: *app_image_policy
     image: *backend_image
     profiles:
       - migration
@@ -242,6 +254,7 @@ services:
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-secret-key}
 
   proxy:
+    <<: *app_image_policy
     image: *proxy_image
     build:
       context: ./apps/proxy

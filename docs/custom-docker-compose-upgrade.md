@@ -21,6 +21,7 @@ vim .env.custom
 - `APP_DOMAIN`
 - `PLANE_IMAGE_REGISTRY`
 - `PLANE_IMAGE_TAG`
+- `PLANE_IMAGE_PULL_POLICY`
 - `SECRET_KEY`
 - `LIVE_SERVER_SECRET_KEY`
 - `POSTGRES_PASSWORD`
@@ -36,17 +37,46 @@ NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
 LARK_BASE_DOMAIN=feishu.cn
 ```
 
-## 构建并推送镜像
+如果在生产服务器直接从当前源码构建部署，使用：
+
+```bash
+PLANE_IMAGE_REGISTRY=local
+PLANE_IMAGE_PULL_POLICY=never
+```
+
+如果由 CI 构建并推送到私有镜像仓库，生产服务器只拉镜像，使用：
+
+```bash
+PLANE_IMAGE_REGISTRY=registry.example.com/aidong
+PLANE_IMAGE_PULL_POLICY=always
+```
+
+## 方式一：生产服务器直接构建部署
+
+适合单机部署或运维直接拿源码包上线。
+
+```bash
+docker compose --env-file .env.custom -f docker-compose.custom.yml build \
+  web admin space live api proxy
+```
+
+`worker`、`beat-worker`、`migrator`、`lark-connector` 共用 `plane-backend` 镜像，不需要单独构建。
+
+然后按下面的“生产升级”执行迁移和启动。此方式不要执行 `docker compose pull`。
+
+## 方式二：CI 构建并推送镜像
 
 在构建机或 CI 上执行：
 
 ```bash
 export PLANE_IMAGE_REGISTRY=registry.example.com/aidong
 export PLANE_IMAGE_TAG=feishu-lark-$(date +%Y%m%d%H%M)
+export PLANE_IMAGE_PULL_POLICY=never
 
 cp .env.custom.example .env.custom
 sed -i "s|^PLANE_IMAGE_REGISTRY=.*|PLANE_IMAGE_REGISTRY=${PLANE_IMAGE_REGISTRY}|" .env.custom
 sed -i "s|^PLANE_IMAGE_TAG=.*|PLANE_IMAGE_TAG=${PLANE_IMAGE_TAG}|" .env.custom
+sed -i "s|^PLANE_IMAGE_PULL_POLICY=.*|PLANE_IMAGE_PULL_POLICY=${PLANE_IMAGE_PULL_POLICY}|" .env.custom
 
 docker compose --env-file .env.custom -f docker-compose.custom.yml build \
   web admin space live api proxy
@@ -66,11 +96,17 @@ docker compose --env-file .env.custom -f docker-compose.custom.yml exec -T plane
   pg_dump -U "${POSTGRES_USER:-plane}" "${POSTGRES_DB:-plane}" > "plane-backup-$(date +%Y%m%d%H%M).sql"
 ```
 
-拉取新镜像：
+如果生产服务器使用私有镜像仓库，拉取新镜像：
 
 ```bash
 docker compose --env-file .env.custom -f docker-compose.custom.yml pull \
   web admin space live api proxy
+```
+
+如果生产服务器直接构建镜像，跳过 pull，改为确认镜像已构建：
+
+```bash
+docker images | grep plane-
 ```
 
 执行数据库迁移：
@@ -132,7 +168,7 @@ docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=2
 
 ```bash
 vim .env.custom  # 把 PLANE_IMAGE_TAG 改回上一版
-docker compose --env-file .env.custom -f docker-compose.custom.yml pull
+docker compose --env-file .env.custom -f docker-compose.custom.yml pull  # 私有仓库方式需要；本机构建方式跳过
 docker compose --env-file .env.custom -f docker-compose.custom.yml up -d
 ```
 
