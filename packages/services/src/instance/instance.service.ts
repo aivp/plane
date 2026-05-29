@@ -12,6 +12,7 @@ import type {
   IInstanceAdmin,
   IInstanceConfiguration,
   IInstanceInfo,
+  TLarkInstanceStatus,
   TPage,
 } from "@plane/types";
 // api service
@@ -136,6 +137,34 @@ export class InstanceService extends APIService {
    */
   async disableEmail(): Promise<void> {
     return this.delete("/api/instances/configurations/disable-email-feature/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async larkStatus(): Promise<TLarkInstanceStatus> {
+    return this.get("/api/instances/lark/status/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async testLarkConnection(): Promise<{ connected: boolean; domain: string }> {
+    return this.post("/api/instances/lark/test-connection/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
+  async testLarkMessage(data: {
+    receive_id: string;
+    receive_id_type: "open_id" | "union_id" | "user_id" | "email" | "chat_id";
+    text?: string;
+  }): Promise<{ sent: boolean }> {
+    return this.post("/api/instances/lark/test-message/", data)
       .then((response) => response?.data)
       .catch((error) => {
         throw error?.response?.data;

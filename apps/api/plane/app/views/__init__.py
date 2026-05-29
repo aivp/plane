@@ -60,6 +60,12 @@ from .workspace.member import (
     WorkspaceProjectMemberEndpoint,
     WorkspaceMemberUserViewsEndpoint,
 )
+from .workspace.lark import (
+    WorkspaceLarkContactsEndpoint,
+    WorkspaceLarkImportEndpoint,
+    WorkspaceLarkSyncEndpoint,
+    WorkspaceLarkSyncRunsEndpoint,
+)
 from .workspace.invite import (
     WorkspaceInvitationsViewset,
     WorkspaceJoinEndpoint,

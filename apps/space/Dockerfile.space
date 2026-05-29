@@ -7,7 +7,9 @@ ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PNPM_HOME/bin:$PATH"
 ENV CI=1
 
-RUN corepack enable pnpm
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
+ENV NPM_CONFIG_REGISTRY=$NPM_CONFIG_REGISTRY
+RUN corepack enable pnpm && pnpm config set registry "$NPM_CONFIG_REGISTRY"
 
 # =========================================================================== #
 

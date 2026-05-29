@@ -18,6 +18,8 @@ from .views import (
     GitHubOauthInitiateEndpoint,
     GoogleCallbackEndpoint,
     GoogleOauthInitiateEndpoint,
+    LarkCallbackEndpoint,
+    LarkOauthInitiateEndpoint,
     MagicGenerateEndpoint,
     MagicSignInEndpoint,
     MagicSignUpEndpoint,
@@ -34,6 +36,8 @@ from .views import (
     GitHubOauthInitiateSpaceEndpoint,
     GoogleCallbackSpaceEndpoint,
     GoogleOauthInitiateSpaceEndpoint,
+    LarkCallbackSpaceEndpoint,
+    LarkOauthInitiateSpaceEndpoint,
     MagicGenerateSpaceEndpoint,
     MagicSignInSpaceEndpoint,
     MagicSignUpSpaceEndpoint,
@@ -88,6 +92,19 @@ urlpatterns = [
         "spaces/google/callback/",
         GoogleCallbackSpaceEndpoint.as_view(),
         name="space-google-callback",
+    ),
+    ## Feishu Oauth
+    path("lark/", LarkOauthInitiateEndpoint.as_view(), name="lark-initiate"),
+    path("lark/callback/", LarkCallbackEndpoint.as_view(), name="lark-callback"),
+    path(
+        "spaces/lark/",
+        LarkOauthInitiateSpaceEndpoint.as_view(),
+        name="space-lark-initiate",
+    ),
+    path(
+        "spaces/lark/callback/",
+        LarkCallbackSpaceEndpoint.as_view(),
+        name="space-lark-callback",
     ),
     ## Github Oauth
     path("github/", GitHubOauthInitiateEndpoint.as_view(), name="github-initiate"),

@@ -10,6 +10,7 @@ import { observer } from "mobx-react";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import { Button } from "@plane/propel/button";
+import { UsersRound } from "lucide-react";
 import { SearchIcon } from "@plane/propel/icons";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspaceBulkInviteFormData } from "@plane/types";
@@ -20,9 +21,11 @@ import { CountChip } from "@/components/common/count-chip";
 import { PageHead } from "@/components/core/page-title";
 import { MemberListFiltersDropdown } from "@/components/project/dropdowns/filters/member-list";
 import { WorkspaceMembersList } from "@/components/workspace/settings/members-list";
+import { LarkImportModal } from "@/components/workspace/settings/lark-import-modal";
 // hooks
 import { useMember } from "@/hooks/store/use-member";
 import { useWorkspace } from "@/hooks/store/use-workspace";
+import { useInstance } from "@/hooks/store/use-instance";
 import { useUserPermissions } from "@/hooks/store/user";
 // plane web components
 import { BillingActionsButton } from "@/plane-web/components/workspace/billing/billing-actions-button";
@@ -35,15 +38,17 @@ import { MembersWorkspaceSettingsHeader } from "./header";
 const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsPage({ params }: Route.ComponentProps) {
   // states
   const [inviteModal, setInviteModal] = useState(false);
+  const [larkImportModal, setLarkImportModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   // router
   const { workspaceSlug } = params;
   // store hooks
   const { workspaceUserInfo, allowPermissions } = useUserPermissions();
   const {
-    workspace: { workspaceMemberIds, inviteMembersToWorkspace, filtersStore },
+    workspace: { workspaceMemberIds, inviteMembersToWorkspace, filtersStore, fetchWorkspaceMembers },
   } = useMember();
   const { currentWorkspace } = useWorkspace();
+  const { config } = useInstance();
   const { t } = useTranslation();
 
   // derived values
@@ -108,6 +113,12 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
         onClose={() => setInviteModal(false)}
         onSubmit={handleWorkspaceInvite}
       />
+      <LarkImportModal
+        isOpen={larkImportModal}
+        workspaceSlug={workspaceSlug}
+        onClose={() => setLarkImportModal(false)}
+        onImported={() => fetchWorkspaceMembers(workspaceSlug)}
+      />
       <section
         className={cn("size-full", {
           "opacity-60": !canPerformWorkspaceMemberActions,
@@ -138,6 +149,12 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
               memberType="workspace"
             />
             <MembersActivityButton workspaceSlug={workspaceSlug} />
+            {canPerformWorkspaceAdminActions && config?.is_lark_enabled && (
+              <Button variant="secondary" size="lg" onClick={() => setLarkImportModal(true)}>
+                <UsersRound className="h-4 w-4" />
+                Feishu import
+              </Button>
+            )}
             {canPerformWorkspaceAdminActions && (
               <Button variant="primary" size="lg" onClick={() => setInviteModal(true)}>
                 {t("workspace_settings.settings.members.add_member")}

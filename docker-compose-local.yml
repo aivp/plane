@@ -122,6 +122,26 @@ services:
       - plane-db
       - plane-redis
 
+  lark-connector:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.dev
+      args:
+        DOCKER_BUILDKIT: 1
+    restart: unless-stopped
+    networks:
+      - dev_env
+    volumes:
+      - ./apps/api:/code
+    command: ./bin/docker-entrypoint-lark-connector.sh
+    env_file:
+      - ./apps/api/.env
+    depends_on:
+      - api
+      - worker
+      - plane-db
+      - plane-redis
+
   migrator:
     build:
       context: ./apps/api

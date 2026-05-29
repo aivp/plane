@@ -26,3 +26,9 @@ from .workspace import (
     InstanceWorkSpaceAvailabilityCheckEndpoint,
     InstanceWorkSpaceEndpoint,
 )
+
+from .lark import (
+    InstanceLarkStatusEndpoint,
+    InstanceLarkTestConnectionEndpoint,
+    InstanceLarkTestMessageEndpoint,
+)

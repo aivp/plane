@@ -144,6 +144,75 @@ gitea_config_variables = [
     },
 ]
 
+lark_config_variables = [
+    {
+        "key": "IS_LARK_ENABLED",
+        "value": os.environ.get("IS_LARK_ENABLED", "0"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_CLIENT_ID",
+        "value": os.environ.get("LARK_CLIENT_ID"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_CLIENT_SECRET",
+        "value": os.environ.get("LARK_CLIENT_SECRET"),
+        "category": "LARK",
+        "is_encrypted": True,
+    },
+    {
+        "key": "LARK_BASE_DOMAIN",
+        "value": "feishu.cn",
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_DEFAULT_WORKSPACE_SLUG",
+        "value": os.environ.get("LARK_DEFAULT_WORKSPACE_SLUG", ""),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_DEFAULT_WORKSPACE_ROLE",
+        "value": os.environ.get("LARK_DEFAULT_WORKSPACE_ROLE", "15"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_AUTO_SYNC_ENABLED",
+        "value": os.environ.get("LARK_AUTO_SYNC_ENABLED", "0"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_OFFBOARDING_POLICY",
+        "value": os.environ.get("LARK_OFFBOARDING_POLICY", "deactivate_workspace_member"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_NOTIFICATIONS_ENABLED",
+        "value": os.environ.get("LARK_NOTIFICATIONS_ENABLED", "0"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "LARK_CONNECTOR_ENABLED",
+        "value": os.environ.get("LARK_CONNECTOR_ENABLED", "0"),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+    {
+        "key": "PLANE_PUBLIC_BASE_URL",
+        "value": os.environ.get("PLANE_PUBLIC_BASE_URL", ""),
+        "category": "LARK",
+        "is_encrypted": False,
+    },
+]
+
 smtp_config_variables = [
     {
         "key": "ENABLE_SMTP",
@@ -239,6 +308,7 @@ core_config_variables = [
     *github_config_variables,
     *gitlab_config_variables,
     *gitea_config_variables,
+    *lark_config_variables,
     *smtp_config_variables,
     *llm_config_variables,
     *unsplash_config_variables,

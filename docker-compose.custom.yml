@@ -1,0 +1,282 @@
+name: ${COMPOSE_PROJECT_NAME:-plane}
+
+x-images:
+  backend: &backend_image ${PLANE_IMAGE_REGISTRY:-local}/plane-backend:${PLANE_IMAGE_TAG:-feishu-lark}
+  frontend: &frontend_image ${PLANE_IMAGE_REGISTRY:-local}/plane-frontend:${PLANE_IMAGE_TAG:-feishu-lark}
+  admin: &admin_image ${PLANE_IMAGE_REGISTRY:-local}/plane-admin:${PLANE_IMAGE_TAG:-feishu-lark}
+  space: &space_image ${PLANE_IMAGE_REGISTRY:-local}/plane-space:${PLANE_IMAGE_TAG:-feishu-lark}
+  live: &live_image ${PLANE_IMAGE_REGISTRY:-local}/plane-live:${PLANE_IMAGE_TAG:-feishu-lark}
+  proxy: &proxy_image ${PLANE_IMAGE_REGISTRY:-local}/plane-proxy:${PLANE_IMAGE_TAG:-feishu-lark}
+
+x-node-build-args: &node_build_args
+  DOCKER_BUILDKIT: 1
+  NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org/}
+  VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+  VITE_API_BASE_PATH: ${VITE_API_BASE_PATH:-/api}
+  VITE_ADMIN_BASE_URL: ${VITE_ADMIN_BASE_URL:-}
+  VITE_ADMIN_BASE_PATH: ${VITE_ADMIN_BASE_PATH:-/god-mode}
+  VITE_SPACE_BASE_URL: ${VITE_SPACE_BASE_URL:-}
+  VITE_SPACE_BASE_PATH: ${VITE_SPACE_BASE_PATH:-/spaces}
+  VITE_LIVE_BASE_URL: ${VITE_LIVE_BASE_URL:-}
+  VITE_LIVE_BASE_PATH: ${VITE_LIVE_BASE_PATH:-/live}
+  VITE_WEB_BASE_URL: ${VITE_WEB_BASE_URL:-}
+  VITE_WEB_BASE_PATH: ${VITE_WEB_BASE_PATH:-}
+
+x-api-env: &api_env
+  WEB_URL: ${WEB_URL:-http://localhost}
+  DEBUG: ${PLANE_DEBUG:-0}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost}
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+  USE_MINIO: ${USE_MINIO:-1}
+  DATABASE_URL: ${DATABASE_URL:-}
+  POSTGRES_HOST: ${POSTGRES_HOST:-plane-db}
+  POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+  POSTGRES_USER: ${POSTGRES_USER:-plane}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plane}
+  POSTGRES_DB: ${POSTGRES_DB:-plane}
+  REDIS_HOST: ${REDIS_HOST:-plane-redis}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  REDIS_URL: ${REDIS_URL:-redis://plane-redis:6379/}
+  RABBITMQ_HOST: ${RABBITMQ_HOST:-plane-mq}
+  RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+  RABBITMQ_USER: ${RABBITMQ_USER:-plane}
+  RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-plane}
+  RABBITMQ_VHOST: ${RABBITMQ_VHOST:-plane}
+  AMQP_URL: ${AMQP_URL:-}
+  AWS_REGION: ${AWS_REGION:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-secret-key}
+  AWS_S3_ENDPOINT_URL: ${AWS_S3_ENDPOINT_URL:-http://plane-minio:9000}
+  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880}
+  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
+  SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in the env file}
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY:?Set LIVE_SERVER_SECRET_KEY in the env file}
+  API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  WEBHOOK_ALLOWED_IPS: ${WEBHOOK_ALLOWED_IPS:-}
+  WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:-}
+  ADMIN_BASE_URL: ${ADMIN_BASE_URL:-}
+  ADMIN_BASE_PATH: ${ADMIN_BASE_PATH:-/god-mode}
+  SPACE_BASE_URL: ${SPACE_BASE_URL:-}
+  SPACE_BASE_PATH: ${SPACE_BASE_PATH:-/spaces}
+  APP_BASE_URL: ${APP_BASE_URL:-}
+  APP_BASE_PATH: ${APP_BASE_PATH:-}
+  LIVE_BASE_URL: ${LIVE_BASE_URL:-}
+  LIVE_BASE_PATH: ${LIVE_BASE_PATH:-/live}
+  IS_LARK_ENABLED: ${IS_LARK_ENABLED:-0}
+  LARK_CLIENT_ID: ${LARK_CLIENT_ID:-}
+  LARK_CLIENT_SECRET: ${LARK_CLIENT_SECRET:-}
+  LARK_BASE_DOMAIN: feishu.cn
+  LARK_DEFAULT_WORKSPACE_SLUG: ${LARK_DEFAULT_WORKSPACE_SLUG:-}
+  LARK_DEFAULT_WORKSPACE_ROLE: ${LARK_DEFAULT_WORKSPACE_ROLE:-15}
+  LARK_AUTO_SYNC_ENABLED: ${LARK_AUTO_SYNC_ENABLED:-0}
+  LARK_OFFBOARDING_POLICY: ${LARK_OFFBOARDING_POLICY:-deactivate_workspace_member}
+  LARK_NOTIFICATIONS_ENABLED: ${LARK_NOTIFICATIONS_ENABLED:-0}
+  LARK_CONNECTOR_ENABLED: ${LARK_CONNECTOR_ENABLED:-0}
+  PLANE_PUBLIC_BASE_URL: ${PLANE_PUBLIC_BASE_URL:-http://localhost}
+
+services:
+  web:
+    image: *frontend_image
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile.web
+      args: *node_build_args
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  admin:
+    image: *admin_image
+    build:
+      context: .
+      dockerfile: ./apps/admin/Dockerfile.admin
+      args: *node_build_args
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+
+  space:
+    image: *space_image
+    build:
+      context: .
+      dockerfile: ./apps/space/Dockerfile.space
+      args: *node_build_args
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+
+  live:
+    image: *live_image
+    build:
+      context: .
+      dockerfile: ./apps/live/Dockerfile.live
+      args:
+        DOCKER_BUILDKIT: 1
+        NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-https://registry.npmjs.org/}
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://api:8000}
+      LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY:?Set LIVE_SERVER_SECRET_KEY in the env file}
+      REDIS_HOST: ${REDIS_HOST:-plane-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_URL: ${REDIS_URL:-redis://plane-redis:6379/}
+    depends_on:
+      - api
+      - plane-redis
+
+  api:
+    image: *backend_image
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.api
+      args:
+        DOCKER_BUILDKIT: 1
+    restart: unless-stopped
+    command: ./bin/docker-entrypoint-api.sh
+    volumes:
+      - logs_api:/code/plane/logs
+    environment:
+      <<: *api_env
+    depends_on:
+      - plane-db
+      - plane-redis
+      - plane-mq
+
+  worker:
+    image: *backend_image
+    restart: unless-stopped
+    command: ./bin/docker-entrypoint-worker.sh
+    volumes:
+      - logs_worker:/code/plane/logs
+    environment:
+      <<: *api_env
+    depends_on:
+      - api
+      - plane-db
+      - plane-redis
+      - plane-mq
+
+  beat-worker:
+    image: *backend_image
+    restart: unless-stopped
+    command: ./bin/docker-entrypoint-beat.sh
+    volumes:
+      - logs_beat-worker:/code/plane/logs
+    environment:
+      <<: *api_env
+    depends_on:
+      - api
+      - plane-db
+      - plane-redis
+      - plane-mq
+
+  lark-connector:
+    image: *backend_image
+    profiles:
+      - lark
+    restart: on-failure
+    command: ./bin/docker-entrypoint-lark-connector.sh
+    volumes:
+      - logs_lark_connector:/code/plane/logs
+    environment:
+      <<: *api_env
+    depends_on:
+      - api
+      - worker
+      - plane-db
+      - plane-redis
+
+  migrator:
+    image: *backend_image
+    profiles:
+      - migration
+    restart: "no"
+    command: ./bin/docker-entrypoint-migrator.sh
+    volumes:
+      - logs_migrator:/code/plane/logs
+    environment:
+      <<: *api_env
+    depends_on:
+      - plane-db
+      - plane-redis
+
+  plane-db:
+    image: postgres:15.7-alpine
+    restart: unless-stopped
+    command: postgres -c 'max_connections=1000'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-plane}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-plane}
+      POSTGRES_DB: ${POSTGRES_DB:-plane}
+      PGDATA: ${PGDATA:-/var/lib/postgresql/data}
+
+  plane-redis:
+    image: valkey/valkey:7.2.11-alpine
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+
+  plane-mq:
+    image: rabbitmq:3.13.6-management-alpine
+    restart: unless-stopped
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-plane}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-plane}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-plane}
+
+  plane-minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /export --console-address ":9090"
+    volumes:
+      - uploads:/export
+    environment:
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-access-key}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY:-secret-key}
+
+  proxy:
+    image: *proxy_image
+    build:
+      context: ./apps/proxy
+      dockerfile: Dockerfile.ce
+    restart: unless-stopped
+    ports:
+      - "${LISTEN_HTTP_PORT:-80}:80"
+      - "${LISTEN_HTTPS_PORT:-443}:443"
+    volumes:
+      - proxy_config:/config
+      - proxy_data:/data
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880}
+      BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      CERT_EMAIL: ${CERT_EMAIL:-}
+      CERT_ACME_CA: ${CERT_ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
+      CERT_ACME_DNS: ${CERT_ACME_DNS:-}
+    depends_on:
+      - web
+      - api
+      - space
+      - admin
+      - live
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
+  rabbitmq_data:
+  proxy_config:
+  proxy_data:
+  logs_api:
+  logs_worker:
+  logs_beat-worker:
+  logs_lark_connector:
+  logs_migrator:

@@ -75,9 +75,11 @@ export enum EAuthenticationErrorCodes {
   GOOGLE_NOT_CONFIGURED = "5105",
   GITHUB_NOT_CONFIGURED = "5110",
   GITLAB_NOT_CONFIGURED = "5111",
+  LARK_NOT_CONFIGURED = "5113",
   GOOGLE_OAUTH_PROVIDER_ERROR = "5115",
   GITHUB_OAUTH_PROVIDER_ERROR = "5120",
   GITLAB_OAUTH_PROVIDER_ERROR = "5121",
+  LARK_OAUTH_PROVIDER_ERROR = "5124",
   // Reset Password
   INVALID_PASSWORD_TOKEN = "5125",
   EXPIRED_PASSWORD_TOKEN = "5130",
@@ -270,6 +272,10 @@ const errorCodeMessages: {
     title: `GitLab not configured`,
     message: () => `GitLab not configured. Please contact your administrator.`,
   },
+  [EAuthenticationErrorCodes.LARK_NOT_CONFIGURED]: {
+    title: `Feishu not configured`,
+    message: () => `Feishu not configured. Please contact your administrator.`,
+  },
   [EAuthenticationErrorCodes.GOOGLE_OAUTH_PROVIDER_ERROR]: {
     title: `Google OAuth provider error`,
     message: () => `Google OAuth provider error. Please try again.`,
@@ -281,6 +287,10 @@ const errorCodeMessages: {
   [EAuthenticationErrorCodes.GITLAB_OAUTH_PROVIDER_ERROR]: {
     title: `GitLab OAuth provider error`,
     message: () => `GitLab OAuth provider error. Please try again.`,
+  },
+  [EAuthenticationErrorCodes.LARK_OAUTH_PROVIDER_ERROR]: {
+    title: `Feishu OAuth provider error`,
+    message: () => `Feishu OAuth provider error. Please try again.`,
   },
 
   // Reset Password
@@ -405,9 +415,11 @@ export const authErrorHandler = (errorCode: EAuthenticationErrorCodes, email?: s
     EAuthenticationErrorCodes.GOOGLE_NOT_CONFIGURED,
     EAuthenticationErrorCodes.GITHUB_NOT_CONFIGURED,
     EAuthenticationErrorCodes.GITLAB_NOT_CONFIGURED,
+    EAuthenticationErrorCodes.LARK_NOT_CONFIGURED,
     EAuthenticationErrorCodes.GOOGLE_OAUTH_PROVIDER_ERROR,
     EAuthenticationErrorCodes.GITHUB_OAUTH_PROVIDER_ERROR,
     EAuthenticationErrorCodes.GITLAB_OAUTH_PROVIDER_ERROR,
+    EAuthenticationErrorCodes.LARK_OAUTH_PROVIDER_ERROR,
     EAuthenticationErrorCodes.INVALID_PASSWORD_TOKEN,
     EAuthenticationErrorCodes.EXPIRED_PASSWORD_TOKEN,
     EAuthenticationErrorCodes.INCORRECT_OLD_PASSWORD,

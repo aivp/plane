@@ -51,6 +51,14 @@ app.conf.beat_schedule = {
         "task": "plane.license.bgtasks.telemetry_metrics.push_instance_metrics",
         "schedule": schedule(run_every=timedelta(minutes=METRICS_PUSH_INTERVAL_MINUTES)),
     },
+    "send-feishu-notifications": {
+        "task": "plane.bgtasks.lark_task.lark_send_pending_notifications",
+        "schedule": crontab(minute="*/1"),
+    },
+    "process-feishu-events": {
+        "task": "plane.bgtasks.lark_task.lark_process_events",
+        "schedule": crontab(minute="*/1"),
+    },
     # Occurs once every day
     "check-every-day-to-delete-hard-delete": {
         "task": "plane.bgtasks.deletion_task.hard_delete",

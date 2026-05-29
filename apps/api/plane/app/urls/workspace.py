@@ -36,6 +36,10 @@ from plane.app.views import (
     WorkspaceHomePreferenceViewSet,
     WorkspaceStickyViewSet,
     WorkspaceUserPreferenceViewSet,
+    WorkspaceLarkContactsEndpoint,
+    WorkspaceLarkImportEndpoint,
+    WorkspaceLarkSyncEndpoint,
+    WorkspaceLarkSyncRunsEndpoint,
 )
 
 
@@ -103,6 +107,26 @@ urlpatterns = [
         "workspaces/<str:slug>/members/leave/",
         WorkSpaceMemberViewSet.as_view({"post": "leave"}),
         name="leave-workspace-members",
+    ),
+    path(
+        "workspaces/<str:slug>/lark/contacts/",
+        WorkspaceLarkContactsEndpoint.as_view(),
+        name="workspace-lark-contacts",
+    ),
+    path(
+        "workspaces/<str:slug>/lark/sync/",
+        WorkspaceLarkSyncEndpoint.as_view(),
+        name="workspace-lark-sync",
+    ),
+    path(
+        "workspaces/<str:slug>/lark/sync-runs/",
+        WorkspaceLarkSyncRunsEndpoint.as_view(),
+        name="workspace-lark-sync-runs",
+    ),
+    path(
+        "workspaces/<str:slug>/lark/import/",
+        WorkspaceLarkImportEndpoint.as_view(),
+        name="workspace-lark-import",
     ),
     path(
         "users/last-visited-workspace/",

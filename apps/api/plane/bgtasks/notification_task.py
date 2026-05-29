@@ -30,6 +30,8 @@ from django.db.models import Subquery
 from celery import shared_task
 from bs4 import BeautifulSoup
 
+from plane.integrations.lark.notifications import enqueue_lark_notifications
+
 
 # =========== Issue Description Html Parsing and notification Functions ======================
 
@@ -666,7 +668,8 @@ def notifications(
                 removed_mention=removed_mention,
             )
             # Bulk create notifications
-            Notification.objects.bulk_create(bulk_notifications, batch_size=100)
+            created_notifications = Notification.objects.bulk_create(bulk_notifications, batch_size=100)
+            enqueue_lark_notifications(created_notifications)
             EmailNotificationLog.objects.bulk_create(bulk_email_logs, batch_size=100, ignore_conflicts=True)
         return
     except Exception as e:

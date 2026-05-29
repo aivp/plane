@@ -18,6 +18,9 @@ from plane.license.api.views import (
     InstanceAdminUserSessionEndpoint,
     InstanceWorkSpaceAvailabilityCheckEndpoint,
     InstanceWorkSpaceEndpoint,
+    InstanceLarkStatusEndpoint,
+    InstanceLarkTestConnectionEndpoint,
+    InstanceLarkTestMessageEndpoint,
 )
 
 urlpatterns = [
@@ -71,4 +74,15 @@ urlpatterns = [
         name="instance-workspace-availability",
     ),
     path("workspaces/", InstanceWorkSpaceEndpoint.as_view(), name="instance-workspace"),
+    path("lark/status/", InstanceLarkStatusEndpoint.as_view(), name="instance-lark-status"),
+    path(
+        "lark/test-connection/",
+        InstanceLarkTestConnectionEndpoint.as_view(),
+        name="instance-lark-test-connection",
+    ),
+    path(
+        "lark/test-message/",
+        InstanceLarkTestMessageEndpoint.as_view(),
+        name="instance-lark-test-message",
+    ),
 ]
