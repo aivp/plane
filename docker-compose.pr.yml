@@ -1,0 +1,71 @@
+# Overlay for deploying a custom Plane build over the official self-hosted
+# compose file.
+#
+# Local image defaults match the test build from this branch:
+#   docker compose -f deployments/cli/community/docker-compose.yml -f docker-compose.pr.yml \
+#     --env-file deployments/cli/community/variables.env up -d
+#
+# For a server deployment, push these images to your registry and set:
+#   PLANE_CUSTOM_IMAGE_PREFIX=registry.example.com/plane
+#   PLANE_CUSTOM_IMAGE_TAG=pr-955f3bf1
+#   PLANE_CUSTOM_PULL_POLICY=always
+
+x-custom-image: &custom-image
+  pull_policy: ${PLANE_CUSTOM_PULL_POLICY:-never}
+
+x-lark-env: &lark-env
+  IS_LARK_ENABLED: ${IS_LARK_ENABLED:-0}
+  LARK_CLIENT_ID: ${LARK_CLIENT_ID:-}
+  LARK_CLIENT_SECRET: ${LARK_CLIENT_SECRET:-}
+  LARK_BASE_DOMAIN: ${LARK_BASE_DOMAIN:-feishu.cn}
+  LARK_DEFAULT_WORKSPACE_SLUG: ${LARK_DEFAULT_WORKSPACE_SLUG:-}
+  LARK_DEFAULT_WORKSPACE_ROLE: ${LARK_DEFAULT_WORKSPACE_ROLE:-15}
+  LARK_AUTO_SYNC_ENABLED: ${LARK_AUTO_SYNC_ENABLED:-0}
+  LARK_AUTO_JOIN_NEW_PROJECTS: ${LARK_AUTO_JOIN_NEW_PROJECTS:-0}
+  LARK_NOTIFICATIONS_ENABLED: ${LARK_NOTIFICATIONS_ENABLED:-0}
+  PLANE_PUBLIC_BASE_URL: ${PLANE_PUBLIC_BASE_URL:-}
+
+services:
+  web:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-frontend:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+
+  space:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-space:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+
+  admin:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-admin:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+
+  live:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-live:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+
+  proxy:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-proxy:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+
+  api:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-backend:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+    environment:
+      <<: *lark-env
+
+  worker:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-backend:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+    environment:
+      <<: *lark-env
+
+  beat-worker:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-backend:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+    environment:
+      <<: *lark-env
+
+  migrator:
+    <<: *custom-image
+    image: ${PLANE_CUSTOM_IMAGE_PREFIX:-local}/plane-backend:${PLANE_CUSTOM_IMAGE_TAG:-pr-955f3bf1}
+    environment:
+      <<: *lark-env
