@@ -9,14 +9,6 @@ import time
 from typing import Any
 
 import lark_oapi as lark
-from django.core.cache import cache
-from django.db import IntegrityError
-from django.utils import timezone
-
-from plane.bgtasks.lark_task import lark_process_events
-from plane.db.models import LarkEvent
-from plane.integrations.lark.client import FEISHU_BASE_DOMAIN, get_lark_configuration
-from plane.settings.redis import redis_instance
 
 
 LOCK_KEY = "integrations:lark:connector:lock"
@@ -33,6 +25,16 @@ EVENT_TYPES = [
 ]
 
 stop_event = threading.Event()
+
+
+def setup_django() -> None:
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "plane.settings.production")
+
+    import django
+    from django.apps import apps
+
+    if not apps.ready:
+        django.setup()
 
 
 def _to_plain(value: Any) -> Any:
@@ -52,6 +54,8 @@ def _to_plain(value: Any) -> Any:
 
 
 def _event_id(event) -> str:
+    from django.utils import timezone
+
     header = getattr(event, "header", None)
     if header and getattr(header, "event_id", None):
         return str(header.event_id)
@@ -75,6 +79,11 @@ def _tenant_key(event) -> str:
 
 
 def persist_event(event) -> None:
+    from django.db import IntegrityError
+
+    from plane.bgtasks.lark_task import lark_process_events
+    from plane.db.models import LarkEvent
+
     try:
         LarkEvent.objects.create(
             event_id=_event_id(event),
@@ -88,6 +97,11 @@ def persist_event(event) -> None:
 
 
 def _heartbeat(lock_value: str) -> None:
+    from django.core.cache import cache
+    from django.utils import timezone
+
+    from plane.settings.redis import redis_instance
+
     redis_client = redis_instance()
     while not stop_event.wait(15):
         current_lock = redis_client.get(LOCK_KEY)
@@ -110,6 +124,14 @@ def _shutdown(*_args):
 
 
 def run_connector() -> int:
+    setup_django()
+
+    from django.core.cache import cache
+    from django.utils import timezone
+
+    from plane.integrations.lark.client import FEISHU_BASE_DOMAIN, get_lark_configuration
+    from plane.settings.redis import redis_instance
+
     config = get_lark_configuration()
     if not (config.is_enabled and config.connector_enabled and config.is_configured):
         print("Feishu connector is disabled or not configured", flush=True)

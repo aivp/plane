@@ -1,3 +1,8 @@
 #!/bin/bash
+set -e
 
-python -m plane.integrations.lark.connector
+python manage.py wait_for_db
+# Wait for migrations
+python manage.py wait_for_migrations
+
+exec python -m plane.integrations.lark.connector
