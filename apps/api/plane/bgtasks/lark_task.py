@@ -166,10 +166,30 @@ def _legacy_card_elements(payload: dict[str, Any], url: str) -> list[dict]:
     return elements
 
 
+def _structured_card_has_body(card: dict[str, Any]) -> bool:
+    if card.get("summary"):
+        return True
+
+    details = card.get("details") if isinstance(card.get("details"), list) else []
+    return any(isinstance(detail, dict) and detail.get("label") and detail.get("value") for detail in details)
+
+
+def _notification_card_from_outbox(outbox: LarkNotificationOutbox) -> dict[str, Any] | None:
+    notification = getattr(outbox, "notification", None)
+    if not notification:
+        return None
+
+    from plane.integrations.lark.notifications import _notification_card
+
+    return _notification_card(notification)
+
+
 def _outbox_card(outbox: LarkNotificationOutbox) -> dict:
     payload = outbox.payload or {}
     url = payload.get("url") or ""
     card = payload.get("card")
+    if not isinstance(card, dict) or not _structured_card_has_body(card):
+        card = _notification_card_from_outbox(outbox)
 
     if isinstance(card, dict):
         title = str(card.get("title") or payload.get("title") or "Plane notification")

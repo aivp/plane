@@ -186,3 +186,29 @@ class TestLarkNotifications:
         assert card["header"]["title"]["content"] == "旧标题"
         assert "旧消息" in card_text
         assert "Open in Plane" in card_text
+
+    @pytest.mark.django_db
+    def test_legacy_payload_with_notification_renders_structured_details(self):
+        notification = _make_notification(field="assignees", new_value="王五")
+        outbox = LarkNotificationOutbox.objects.create(
+            workspace=notification.workspace,
+            notification=notification,
+            recipient_user=notification.receiver,
+            event_key="notification:legacy-assignee:lark",
+            message_type="issue_notification",
+            payload={
+                "title": "added assignee",
+                "message": "",
+                "card": {},
+                "url": "https://plane.example/rd",
+            },
+        )
+
+        card = _outbox_card(outbox)
+        card_text = str(card)
+
+        assert card["header"]["title"]["content"] == "Plane 任务通知"
+        assert "张三 添加了负责人" in card_text
+        assert "负责人：王五" in card_text
+        assert "added assignee" not in card_text
+        assert "在 Plane 中打开" in card_text
