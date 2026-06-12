@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { observer } from "mobx-react";
 import { useSearchParams } from "next/navigation";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { SitesAuthService } from "@plane/services";
 import type { IEmailCheckData } from "@plane/types";
 import { OAuthOptions } from "@plane/ui";
@@ -43,6 +44,7 @@ export const AuthRoot = observer(function AuthRoot() {
   const [isPasswordAutoset, setIsPasswordAutoset] = useState(true);
   // hooks
   const { config } = useInstance();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (error_code) {
@@ -84,7 +86,10 @@ export const AuthRoot = observer(function AuthRoot() {
   const isSMTPConfigured = config?.is_smtp_configured || false;
   const isMagicLoginEnabled = config?.is_magic_login_enabled || false;
   const isEmailPasswordEnabled = config?.is_email_password_enabled || false;
-  const oAuthActionText = authMode === EAuthModes.SIGN_UP ? "Sign up" : "Sign in";
+  const oAuthActionText =
+    authMode === EAuthModes.SIGN_UP
+      ? t("auth.sign_up.header.step.email.header")
+      : t("auth.sign_in.header.step.email.header");
   const { isOAuthEnabled, oAuthOptions } = useOAuthConfig(oAuthActionText);
 
   // submit handler- email verification

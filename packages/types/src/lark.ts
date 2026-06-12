@@ -51,6 +51,7 @@ export type TLarkInstanceStatus = {
   oauth_callback_urls: {
     app: string;
     space: string;
+    admin: string;
   };
   connector: {
     healthy: boolean;

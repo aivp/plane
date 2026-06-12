@@ -68,6 +68,14 @@ class TestLarkIdentity:
         assert result.account.metadata["open_id"] == "ou_open_1"
 
     @pytest.mark.django_db
+    def test_sync_can_disallow_new_user_creation(self):
+        with pytest.raises(ValueError, match="existing Plane user"):
+            sync_lark_user_identity(_lark_user(), source="oauth", allow_create_user=False)
+
+        assert User.objects.count() == 0
+        assert Account.objects.count() == 0
+
+    @pytest.mark.django_db
     def test_sync_upgrades_open_id_account_to_union_id(self):
         user = UserFactory(email="legacy@example.com")
         account = Account.objects.create(

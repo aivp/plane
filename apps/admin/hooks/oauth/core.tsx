@@ -93,9 +93,9 @@ export const getCoreAuthenticationModesMap: (
   },
   lark: {
     key: "lark",
-    name: "Feishu",
+    name: "飞书",
     description: "Allow members to log in or sign up to Plane with their Feishu accounts.",
-    icon: <img src={feishuLogo} height={20} width={20} alt="Feishu Logo" />,
+    icon: <img src={feishuLogo} height={20} width={20} alt="飞书 Logo" />,
     config: <LarkConfiguration disabled={disabled} updateConfig={updateConfig} />,
     enabledConfigKey: "IS_LARK_ENABLED",
   },

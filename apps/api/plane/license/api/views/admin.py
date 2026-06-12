@@ -31,6 +31,7 @@ from plane.license.api.serializers import (
 from plane.license.models import Instance, InstanceAdmin
 from plane.db.models import User, Profile
 from plane.utils.cache import cache_response, invalidate_cache
+from plane.authentication.provider.oauth.lark import LarkOAuthProvider
 from plane.authentication.utils.login import user_login
 from plane.authentication.utils.host import base_host, user_ip
 from plane.authentication.adapter.error import (
@@ -39,6 +40,30 @@ from plane.authentication.adapter.error import (
 )
 from plane.utils.ip_address import get_client_ip
 from plane.utils.path_validator import get_safe_redirect_url
+
+
+ADMIN_LARK_CALLBACK_PATH = "/api/instances/admins/lark/callback/"
+ADMIN_LARK_STATE_SESSION_KEY = "admin_lark_oauth_state"
+
+
+def _admin_error_redirect(request, exc):
+    return HttpResponseRedirect(
+        get_safe_redirect_url(
+            base_url=base_host(request=request, is_admin=True),
+            params=exc.get_error_dict(),
+        )
+    )
+
+
+def _touch_admin_login_metadata(request, user):
+    user.is_active = True
+    user.last_login_medium = "lark"
+    user.last_active = timezone.now()
+    user.last_login_time = timezone.now()
+    user.last_login_ip = get_client_ip(request=request)
+    user.last_login_uagent = request.META.get("HTTP_USER_AGENT")
+    user.token_updated_at = timezone.now()
+    user.save()
 
 
 class InstanceAdminEndpoint(BaseAPIView):
@@ -353,6 +378,89 @@ class InstanceAdminSignInEndpoint(View):
         user.save()
 
         # get tokens for user
+        user_login(request=request, user=user, is_admin=True)
+        url = urljoin(base_host(request=request, is_admin=True), "general/")
+        return HttpResponseRedirect(url)
+
+
+class InstanceAdminLarkOauthInitiateEndpoint(View):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        instance = Instance.objects.first()
+        if instance is None or not instance.is_setup_done:
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["INSTANCE_NOT_CONFIGURED"],
+                error_message="INSTANCE_NOT_CONFIGURED",
+            )
+            return _admin_error_redirect(request, exc)
+
+        try:
+            state = uuid.uuid4().hex
+            provider = LarkOAuthProvider(
+                request=request,
+                state=state,
+                callback_path=ADMIN_LARK_CALLBACK_PATH,
+                persist_user=False,
+                allow_create_user=False,
+            )
+            request.session[ADMIN_LARK_STATE_SESSION_KEY] = state
+            return HttpResponseRedirect(provider.get_auth_url())
+        except AuthenticationException as e:
+            return _admin_error_redirect(request, e)
+
+
+class InstanceAdminLarkCallbackEndpoint(View):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        code = request.GET.get("code")
+        state = request.GET.get("state")
+
+        if state != request.session.get(ADMIN_LARK_STATE_SESSION_KEY, "") or not code:
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["LARK_OAUTH_PROVIDER_ERROR"],
+                error_message="LARK_OAUTH_PROVIDER_ERROR",
+            )
+            return _admin_error_redirect(request, exc)
+
+        instance = Instance.objects.first()
+        if instance is None or not instance.is_setup_done:
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["INSTANCE_NOT_CONFIGURED"],
+                error_message="INSTANCE_NOT_CONFIGURED",
+            )
+            return _admin_error_redirect(request, exc)
+
+        try:
+            provider = LarkOAuthProvider(
+                request=request,
+                code=code,
+                callback_path=ADMIN_LARK_CALLBACK_PATH,
+                persist_user=False,
+                allow_create_user=False,
+            )
+            user = provider.authenticate()
+        except AuthenticationException as e:
+            return _admin_error_redirect(request, e)
+
+        request.session.pop(ADMIN_LARK_STATE_SESSION_KEY, None)
+
+        if not user.is_active:
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["ADMIN_USER_DEACTIVATED"],
+                error_message="ADMIN_USER_DEACTIVATED",
+            )
+            return _admin_error_redirect(request, exc)
+
+        if not InstanceAdmin.objects.filter(instance=instance, user=user).exists():
+            exc = AuthenticationException(
+                error_code=AUTHENTICATION_ERROR_CODES["ADMIN_AUTHENTICATION_FAILED"],
+                error_message="ADMIN_AUTHENTICATION_FAILED",
+            )
+            return _admin_error_redirect(request, exc)
+
+        _touch_admin_login_metadata(request, user)
         user_login(request=request, user=user, is_admin=True)
         url = urljoin(base_host(request=request, is_admin=True), "general/")
         return HttpResponseRedirect(url)

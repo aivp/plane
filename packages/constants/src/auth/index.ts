@@ -84,6 +84,11 @@ export type TAuthErrorInfo = {
 };
 
 export enum EAdminAuthErrorCodes {
+  // Global
+  INSTANCE_NOT_CONFIGURED = "5000",
+  // OAuth
+  LARK_NOT_CONFIGURED = "5113",
+  LARK_OAUTH_PROVIDER_ERROR = "5124",
   // Admin
   ADMIN_ALREADY_EXIST = "5150",
   REQUIRED_ADMIN_EMAIL_PASSWORD_FIRST_NAME = "5155",

@@ -12,10 +12,12 @@ import type { EAdminAuthErrorCodes, TAdminAuthErrorInfo } from "@plane/constants
 import { API_BASE_URL } from "@plane/constants";
 import { Button } from "@plane/propel/button";
 import { AuthService } from "@plane/services";
-import { Input, Spinner } from "@plane/ui";
+import { Input, OAuthOptions, Spinner } from "@plane/ui";
 // components
 import { Banner } from "@/components/common/banner";
+import { useInstance } from "@/hooks/store/use-instance";
 // local components
+import feishuLogo from "@/app/assets/logos/feishu-logo.svg?url";
 import { FormHeader } from "@/components/instance/form-header";
 import { AuthBanner } from "./auth-banner";
 import { AuthHeader } from "./auth-header";
@@ -61,6 +63,8 @@ export function InstanceSignInForm() {
   const [formData, setFormData] = useState<TFormData>(defaultFromData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorInfo, setErrorInfo] = useState<TAdminAuthErrorInfo | undefined>(undefined);
+  // store hooks
+  const { config } = useInstance();
 
   const handleFormChange = (key: keyof TFormData, value: string | boolean) =>
     setFormData((prev) => ({ ...prev, [key]: value }));
@@ -98,6 +102,20 @@ export function InstanceSignInForm() {
     () => (!isSubmitting && formData.email && formData.password ? false : true),
     [formData.email, formData.password, isSubmitting]
   );
+  const larkOAuthOptions = useMemo(
+    () => [
+      {
+        id: "lark",
+        text: "使用飞书登录",
+        icon: <img src={feishuLogo} height={18} width={18} alt="飞书 Logo" />,
+        onClick: () => {
+          window.location.assign(`${API_BASE_URL}/api/instances/admins/lark/`);
+        },
+        enabled: config?.is_lark_enabled,
+      },
+    ],
+    [config?.is_lark_enabled]
+  );
 
   useEffect(() => {
     if (errorCode) {
@@ -117,6 +135,7 @@ export function InstanceSignInForm() {
             heading="Manage your Plane instance"
             subHeading="Configure instance-wide settings to secure your instance"
           />
+          {config?.is_lark_enabled && <OAuthOptions options={larkOAuthOptions} showDivider />}
           <form
             className="space-y-4"
             method="POST"

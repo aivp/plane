@@ -17,7 +17,17 @@ from plane.integrations.lark.identity import sync_lark_user_identity
 class LarkOAuthProvider(Adapter):
     provider = "lark"
 
-    def __init__(self, request, code=None, state=None, callback=None, is_space=False):
+    def __init__(
+        self,
+        request,
+        code=None,
+        state=None,
+        callback=None,
+        is_space=False,
+        callback_path=None,
+        persist_user=True,
+        allow_create_user=True,
+    ):
         try:
             config = ensure_lark_ready()
         except LarkConfigurationError:
@@ -29,7 +39,9 @@ class LarkOAuthProvider(Adapter):
         super().__init__(request=request, provider=self.provider, callback=callback)
         self.code = code
         self.config = config
-        callback_path = "/auth/spaces/lark/callback/" if is_space else "/auth/lark/callback/"
+        self.persist_user = persist_user
+        self.allow_create_user = allow_create_user
+        callback_path = callback_path or ("/auth/spaces/lark/callback/" if is_space else "/auth/lark/callback/")
         self.redirect_uri = f"""{"https" if request.is_secure() else "http"}://{request.get_host()}{callback_path}"""
         self.auth_url = build_lark_authorize_url(
             client_id=config.client_id,
@@ -54,9 +66,10 @@ class LarkOAuthProvider(Adapter):
                 source="oauth",
                 token_data={**token_response, "access_token": user_access_token},
                 tenant_key=token_response.get("tenant_key"),
+                allow_create_user=self.allow_create_user,
             )
 
-            user = self.save_user_data(user=result.user)
+            user = self.save_user_data(user=result.user) if self.persist_user else result.user
             if self.callback:
                 self.callback(user, result.created_user, self.request)
             return user

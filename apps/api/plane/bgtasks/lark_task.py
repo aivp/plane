@@ -3,6 +3,7 @@
 # See the LICENSE file for details.
 
 from datetime import timedelta
+from typing import Any
 
 from celery import shared_task
 from django.db import transaction
@@ -90,40 +91,34 @@ def _lark_receive_id(account: Account | None) -> tuple[str, str]:
     return "", ""
 
 
-def _outbox_card(outbox: LarkNotificationOutbox) -> dict:
-    payload = outbox.payload or {}
-    title = payload.get("title") or "Plane notification"
-    message = payload.get("message") or ""
-    url = payload.get("url") or ""
-    elements = []
-    if message:
-        elements.append(
-            {
-                "tag": "div",
-                "text": {
-                    "tag": "lark_md",
-                    "content": str(message),
-                },
-            }
-        )
-    if url:
-        elements.append(
-            {
-                "tag": "action",
-                "actions": [
-                    {
-                        "tag": "button",
-                        "text": {
-                            "tag": "plain_text",
-                            "content": "Open in Plane",
-                        },
-                        "url": str(url),
-                        "type": "primary",
-                    }
-                ],
-            }
-        )
+def _card_div(content: str) -> dict:
+    return {
+        "tag": "div",
+        "text": {
+            "tag": "lark_md",
+            "content": content,
+        },
+    }
 
+
+def _card_action(url: str, label: str) -> dict:
+    return {
+        "tag": "action",
+        "actions": [
+            {
+                "tag": "button",
+                "text": {
+                    "tag": "plain_text",
+                    "content": label,
+                },
+                "url": url,
+                "type": "primary",
+            }
+        ],
+    }
+
+
+def _interactive_card(title: str, elements: list[dict]) -> dict:
     return {
         "config": {
             "wide_screen_mode": True,
@@ -132,20 +127,58 @@ def _outbox_card(outbox: LarkNotificationOutbox) -> dict:
             "template": "blue",
             "title": {
                 "tag": "plain_text",
-                "content": str(title),
+                "content": title,
             },
         },
-        "elements": elements
-        or [
-            {
-                "tag": "div",
-                "text": {
-                    "tag": "plain_text",
-                    "content": str(title),
-                },
-            }
-        ],
+        "elements": elements or [_card_div(title)],
     }
+
+
+def _structured_card_elements(card: dict[str, Any], url: str) -> list[dict]:
+    elements = []
+    summary = card.get("summary")
+    if summary:
+        elements.append(_card_div(f"**{summary}**"))
+
+    details = card.get("details") if isinstance(card.get("details"), list) else []
+    for detail in details:
+        if not isinstance(detail, dict):
+            continue
+        label = detail.get("label")
+        value = detail.get("value")
+        if not label or not value:
+            continue
+        elements.append(_card_div(f"**{label}**：{value}"))
+
+    if url:
+        elements.append(_card_action(str(url), str(card.get("action_label") or "在 Plane 中打开")))
+
+    return elements
+
+
+def _legacy_card_elements(payload: dict[str, Any], url: str) -> list[dict]:
+    elements = []
+    message = payload.get("message") or ""
+    if message:
+        elements.append(_card_div(str(message)))
+    if url:
+        elements.append(_card_action(str(url), "Open in Plane"))
+    return elements
+
+
+def _outbox_card(outbox: LarkNotificationOutbox) -> dict:
+    payload = outbox.payload or {}
+    url = payload.get("url") or ""
+    card = payload.get("card")
+
+    if isinstance(card, dict):
+        title = str(card.get("title") or payload.get("title") or "Plane notification")
+        elements = _structured_card_elements(card, str(url))
+        if elements:
+            return _interactive_card(title, elements)
+
+    title = str(payload.get("title") or "Plane notification")
+    return _interactive_card(title, _legacy_card_elements(payload, str(url)))
 
 
 @shared_task

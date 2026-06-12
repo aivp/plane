@@ -219,6 +219,7 @@ def sync_lark_user_identity(
     source: str,
     token_data: dict[str, Any] | None = None,
     tenant_key: str | None = None,
+    allow_create_user: bool = True,
 ) -> LarkIdentitySyncResult:
     lark_user = normalize_lark_user(raw_lark_user, tenant_key=tenant_key)
     identity = stable_lark_identity(lark_user)
@@ -234,6 +235,8 @@ def sync_lark_user_identity(
     else:
         user = _maybe_merge_by_real_email(lark_user, identity)
         if not user:
+            if not allow_create_user:
+                raise ValueError("Feishu user does not match an existing Plane user")
             user = _create_lark_user(lark_user, identity)
             created_user = True
 

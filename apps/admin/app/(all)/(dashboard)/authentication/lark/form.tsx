@@ -161,6 +161,16 @@ export function InstanceLarkConfigForm(props: Props) {
         </p>
       ),
     },
+    {
+      key: "God_Mode_Callback_URI",
+      label: "God Mode callback URI",
+      url: `${originURL}/api/instances/admins/lark/callback/`,
+      description: (
+        <p>
+          Paste this into the same Feishu OAuth <CodeBlock darkerShade>Redirect URL</CodeBlock> list.
+        </p>
+      ),
+    },
   ];
 
   const onSubmit = async (formData: LarkConfigFormValues) => {

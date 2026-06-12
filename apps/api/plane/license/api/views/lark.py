@@ -31,6 +31,7 @@ class InstanceLarkStatusEndpoint(BaseAPIView):
                 "oauth_callback_urls": {
                     "app": f"{request_base_url}/auth/lark/callback/",
                     "space": f"{request_base_url}/auth/spaces/lark/callback/",
+                    "admin": f"{request_base_url}/api/instances/admins/lark/callback/",
                 },
                 "connector": {
                     "healthy": bool(connector_heartbeat),

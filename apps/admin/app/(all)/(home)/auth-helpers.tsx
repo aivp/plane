@@ -20,6 +20,20 @@ export enum EErrorAlertType {
 const errorCodeMessages: {
   [key in EAdminAuthErrorCodes]: { title: string; message: (email?: string) => React.ReactNode };
 } = {
+  // global
+  [EAdminAuthErrorCodes.INSTANCE_NOT_CONFIGURED]: {
+    title: `Instance not configured`,
+    message: () => `Instance not configured. Please contact your administrator.`,
+  },
+  // OAuth
+  [EAdminAuthErrorCodes.LARK_NOT_CONFIGURED]: {
+    title: `Feishu not configured`,
+    message: () => `Feishu not configured. Please contact your administrator.`,
+  },
+  [EAdminAuthErrorCodes.LARK_OAUTH_PROVIDER_ERROR]: {
+    title: `Feishu OAuth provider error`,
+    message: () => `Feishu OAuth provider error. Please try again.`,
+  },
   // admin
   [EAdminAuthErrorCodes.ADMIN_ALREADY_EXIST]: {
     title: `Admin already exists`,
@@ -77,6 +91,9 @@ const errorCodeMessages: {
 
 export const authErrorHandler = (errorCode: EAdminAuthErrorCodes, email?: string): TAdminAuthErrorInfo | undefined => {
   const bannerAlertErrorCodes = [
+    EAdminAuthErrorCodes.INSTANCE_NOT_CONFIGURED,
+    EAdminAuthErrorCodes.LARK_NOT_CONFIGURED,
+    EAdminAuthErrorCodes.LARK_OAUTH_PROVIDER_ERROR,
     EAdminAuthErrorCodes.ADMIN_ALREADY_EXIST,
     EAdminAuthErrorCodes.REQUIRED_ADMIN_EMAIL_PASSWORD_FIRST_NAME,
     EAdminAuthErrorCodes.INVALID_ADMIN_EMAIL,

@@ -52,9 +52,9 @@ const InstanceLarkAuthenticationPage = observer(function InstanceLarkAuthenticat
     <PageWrapper
       customHeader={
         <AuthenticationMethodCard
-          name="Feishu"
+          name="飞书"
           description="Allow members to login or sign up to Plane with their Feishu accounts."
-          icon={<img src={feishuLogo} height={24} width={24} alt="Feishu Logo" />}
+          icon={<img src={feishuLogo} height={24} width={24} alt="飞书 Logo" />}
           config={
             <ToggleSwitch
               value={isLarkEnabled}
