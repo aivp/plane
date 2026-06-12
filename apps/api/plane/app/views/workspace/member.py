@@ -22,6 +22,8 @@ from plane.app.serializers import (
 )
 from plane.app.views.base import BaseAPIView
 from plane.db.models import Project, ProjectMember, WorkspaceMember, DraftIssue
+from plane.db.models.lark import LarkWorkspaceMemberExclusion
+from plane.integrations.lark.sync import exclude_lark_workspace_member_from_sync
 from plane.utils.cache import invalidate_cache
 
 from .. import BaseViewSet
@@ -147,6 +149,10 @@ class WorkSpaceMemberViewSet(BaseViewSet):
 
         workspace_member.is_active = False
         workspace_member.save()
+        exclude_lark_workspace_member_from_sync(
+            workspace_member,
+            reason=LarkWorkspaceMemberExclusion.Reason.MANUAL_REMOVED,
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @invalidate_cache(
@@ -202,6 +208,10 @@ class WorkSpaceMemberViewSet(BaseViewSet):
         # # Deactivate the user
         workspace_member.is_active = False
         workspace_member.save()
+        exclude_lark_workspace_member_from_sync(
+            workspace_member,
+            reason=LarkWorkspaceMemberExclusion.Reason.MEMBER_LEFT,
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

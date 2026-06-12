@@ -80,6 +80,39 @@ class LarkSyncRun(BaseModel):
         ]
 
 
+class LarkWorkspaceMemberExclusion(BaseModel):
+    class Reason(models.TextChoices):
+        MANUAL_REMOVED = "manual_removed", "Manual removed"
+        MEMBER_LEFT = "member_left", "Member left"
+
+    workspace = models.ForeignKey("db.Workspace", on_delete=models.CASCADE, related_name="lark_member_exclusions")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lark_workspace_member_exclusions",
+    )
+    reason = models.CharField(max_length=32, choices=Reason.choices, default=Reason.MANUAL_REMOVED)
+    is_active = models.BooleanField(default=True, db_index=True)
+    excluded_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Lark Workspace Member Exclusion"
+        verbose_name_plural = "Lark Workspace Member Exclusions"
+        db_table = "lark_workspace_member_exclusions"
+        ordering = ("-excluded_at",)
+        indexes = [
+            models.Index(fields=["workspace", "is_active"]),
+            models.Index(fields=["user", "is_active"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["workspace", "user"],
+                condition=models.Q(is_active=True, deleted_at__isnull=True),
+                name="lark_member_exclusion_unique_active_workspace_user",
+            )
+        ]
+
+
 class LarkNotificationOutbox(BaseModel):
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

@@ -77,6 +77,7 @@ class WorkspaceLarkSyncEndpoint(BaseAPIView):
             sync_type=LarkSyncRun.SyncType.FULL,
             status=LarkSyncRun.Status.PENDING,
         )
+        LarkContactSyncService(sync_run.workspace, role=role).invalidate_contacts_cache()
         lark_sync_workspace.delay(str(sync_run.id), role)
         return Response(_sync_run_payload(sync_run), status=status.HTTP_202_ACCEPTED)
 

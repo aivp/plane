@@ -48,7 +48,7 @@ from .issue import (
 )
 from .module import Module, ModuleIssue, ModuleLink, ModuleMember, ModuleUserProperties
 from .notification import EmailNotificationLog, Notification, UserNotificationPreference
-from .lark import LarkEvent, LarkNotificationOutbox, LarkSyncRun
+from .lark import LarkEvent, LarkNotificationOutbox, LarkSyncRun, LarkWorkspaceMemberExclusion
 from .page import Page, PageLabel, PageLog, ProjectPage, PageVersion
 from .project import (
     Project,

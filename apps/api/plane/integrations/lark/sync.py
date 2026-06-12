@@ -2,18 +2,21 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+import hashlib
 from collections.abc import Iterable
 from typing import Any
 
+from django.core.cache import cache
 from django.db import transaction
 from django.utils import timezone
 
-from plane.db.models import Account, LarkSyncRun, Workspace, WorkspaceMember
+from plane.db.models import Account, LarkSyncRun, LarkWorkspaceMemberExclusion, Workspace, WorkspaceMember
 from plane.integrations.lark.client import LarkAPIClient
 from plane.integrations.lark.identity import normalize_lark_user, stable_lark_identity, sync_lark_user_identity
 
 
 ALLOWED_WORKSPACE_ROLES = {5, 15, 20}
+CONTACT_CACHE_TTL_SECONDS = 600
 
 
 def sanitize_workspace_role(value: Any, default: int = 15) -> int:
@@ -35,6 +38,18 @@ def is_active_lark_user(lark_user: dict[str, Any]) -> bool:
     if status.get("is_activated") is False:
         return False
     return True
+
+
+def exclude_lark_workspace_member_from_sync(workspace_member: WorkspaceMember, *, reason: str) -> None:
+    LarkWorkspaceMemberExclusion.objects.update_or_create(
+        workspace_id=workspace_member.workspace_id,
+        user_id=workspace_member.member_id,
+        is_active=True,
+        defaults={
+            "reason": reason,
+            "excluded_at": timezone.now(),
+        },
+    )
 
 
 class LarkContactSyncService:
@@ -99,10 +114,27 @@ class LarkContactSyncService:
                     emitted.add(identity)
                     yield raw_user
 
-    def list_contacts(self, *, search: str | None = None, limit: int = 500) -> list[dict[str, Any]]:
-        search_value = (search or "").strip().lower()
-        contacts = []
+    def _contacts_cache_key(self, *, search: str, limit: int) -> str:
+        version_key = f"integrations:lark:contacts-version:{self.workspace_id}"
+        version = cache.get(version_key) or "0"
+        raw_key = f"{self.client.config.client_id}:{self.workspace_id}:{version}:{search}:{limit}"
+        digest = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+        return f"integrations:lark:contacts:{digest}"
 
+    @property
+    def workspace_id(self):
+        return self.workspace.id
+
+    def invalidate_contacts_cache(self) -> None:
+        cache.set(f"integrations:lark:contacts-version:{self.workspace_id}", timezone.now().timestamp(), timeout=None)
+
+    def _list_external_contacts(self, *, search_value: str, limit: int) -> list[dict[str, Any]]:
+        cache_key = self._contacts_cache_key(search=search_value, limit=limit)
+        cached_contacts = cache.get(cache_key)
+        if cached_contacts is not None:
+            return cached_contacts
+
+        contacts = []
         for raw_user in self.iter_visible_contacts():
             normalized = normalize_lark_user(raw_user)
             identity = stable_lark_identity(normalized)
@@ -122,10 +154,58 @@ class LarkContactSyncService:
             if search_value and search_value not in haystack:
                 continue
 
-            account = Account.objects.filter(provider="lark", provider_account_id=identity).first()
-            workspace_member = None
-            if account:
-                workspace_member = WorkspaceMember.objects.filter(workspace=self.workspace, member=account.user).first()
+            contacts.append(normalized)
+            if len(contacts) >= limit:
+                break
+
+        cache.set(cache_key, contacts, timeout=CONTACT_CACHE_TTL_SECONDS)
+        return contacts
+
+    def _workspace_member_map(self, contacts: list[dict[str, Any]]) -> dict[str, WorkspaceMember]:
+        identity_candidates: set[str] = set()
+        candidates_by_contact = []
+        for contact in contacts:
+            candidates = []
+            for value in [stable_lark_identity(contact), contact.get("union_id"), contact.get("open_id")]:
+                if value and value not in candidates:
+                    candidates.append(value)
+                    identity_candidates.add(value)
+            candidates_by_contact.append(candidates)
+
+        accounts = {
+            account.provider_account_id: account
+            for account in Account.objects.filter(provider="lark", provider_account_id__in=identity_candidates)
+        }
+        user_ids = {account.user_id for account in accounts.values()}
+        workspace_members = {
+            workspace_member.member_id: workspace_member
+            for workspace_member in WorkspaceMember.objects.filter(workspace=self.workspace, member_id__in=user_ids)
+        }
+
+        member_by_identity = {}
+        for contact, candidates in zip(contacts, candidates_by_contact):
+            for candidate in candidates:
+                account = accounts.get(candidate)
+                workspace_member = workspace_members.get(account.user_id) if account else None
+                if workspace_member:
+                    identity = stable_lark_identity(contact)
+                    if identity:
+                        member_by_identity[identity] = workspace_member
+                    break
+        return member_by_identity
+
+    def list_contacts(self, *, search: str | None = None, limit: int = 500) -> list[dict[str, Any]]:
+        search_value = (search or "").strip().lower()
+        external_contacts = self._list_external_contacts(search_value=search_value, limit=limit)
+        workspace_members = self._workspace_member_map(external_contacts)
+
+        contacts = []
+        for normalized in external_contacts:
+            identity = stable_lark_identity(normalized)
+            if not identity:
+                continue
+
+            workspace_member = workspace_members.get(identity)
 
             contacts.append(
                 {
@@ -142,27 +222,53 @@ class LarkContactSyncService:
                     "workspace_role": workspace_member.role if workspace_member else None,
                 }
             )
-            if len(contacts) >= limit:
-                break
 
         return contacts
 
-    def _ensure_workspace_member(self, user_id, *, role: int) -> tuple[bool, bool]:
+    def _active_excluded_user_ids(self) -> set[str]:
+        return {
+            str(user_id)
+            for user_id in LarkWorkspaceMemberExclusion.objects.filter(
+                workspace=self.workspace,
+                is_active=True,
+            ).values_list("user_id", flat=True)
+        }
+
+    def _clear_member_exclusion(self, user_id) -> None:
+        LarkWorkspaceMemberExclusion.objects.filter(
+            workspace=self.workspace,
+            user_id=user_id,
+            is_active=True,
+        ).update(is_active=False, updated_at=timezone.now())
+
+    def _ensure_workspace_member(
+        self,
+        user_id,
+        *,
+        role: int,
+        excluded_user_ids: set[str] | None = None,
+    ) -> tuple[bool, bool, bool]:
         with transaction.atomic():
             workspace_member = WorkspaceMember.objects.select_for_update().filter(
                 workspace=self.workspace,
                 member_id=user_id,
             ).first()
             if workspace_member:
+                if not workspace_member.is_active and excluded_user_ids and str(user_id) in excluded_user_ids:
+                    return False, False, True
+
                 was_inactive = not workspace_member.is_active
                 workspace_member.is_active = True
                 if was_inactive:
                     workspace_member.role = role
                 workspace_member.save(update_fields=["is_active", "role", "updated_at"])
-                return False, was_inactive
+                return False, was_inactive, False
+
+            if excluded_user_ids and str(user_id) in excluded_user_ids:
+                return False, False, True
 
             WorkspaceMember.objects.create(workspace=self.workspace, member_id=user_id, role=role)
-            return True, False
+            return True, False, False
 
     def _deactivate_missing_members(self, seen_user_ids: set[str]) -> int:
         if self.client.config.offboarding_policy != "deactivate_workspace_member":
@@ -185,6 +291,7 @@ class LarkContactSyncService:
         sync_run.save(update_fields=["status", "started_at", "error", "updated_at"])
 
         seen_user_ids = set()
+        excluded_user_ids = self._active_excluded_user_ids()
         try:
             for raw_user in self.iter_visible_contacts():
                 sync_run.users_seen += 1
@@ -212,7 +319,14 @@ class LarkContactSyncService:
                         sync_run.members_deactivated += 1
                     continue
 
-                created, reactivated = self._ensure_workspace_member(result.user.id, role=self.role)
+                created, reactivated, skipped = self._ensure_workspace_member(
+                    result.user.id,
+                    role=self.role,
+                    excluded_user_ids=excluded_user_ids,
+                )
+                if skipped:
+                    sync_run.users_skipped += 1
+                    continue
                 if created or reactivated:
                     sync_run.members_added += 1
 
@@ -266,7 +380,8 @@ class LarkContactSyncService:
             else:
                 stats["users_updated"] += 1
 
-            created, reactivated = self._ensure_workspace_member(result.user.id, role=role)
+            self._clear_member_exclusion(result.user.id)
+            created, reactivated, _ = self._ensure_workspace_member(result.user.id, role=role)
             if created:
                 stats["members_added"] += 1
             if reactivated:
