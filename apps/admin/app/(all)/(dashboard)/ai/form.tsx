@@ -4,10 +4,11 @@
  * See the LICENSE file for details.
  */
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Lightbulb } from "lucide-react";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import { CustomSelect } from "@plane/ui";
 import type { IFormattedInstanceConfiguration, TInstanceAIConfigurationKeys } from "@plane/types";
 // components
 import type { TControllerInputFormField } from "@/components/common/controller-input";
@@ -21,6 +22,11 @@ type IInstanceAIForm = {
 
 type AIFormValues = Record<TInstanceAIConfigurationKeys, string>;
 
+const AI_PROVIDER_OPTIONS: Record<string, string> = {
+  openai: "OpenAI-compatible",
+  anthropic: "Anthropic",
+};
+
 export function InstanceAIForm(props: IInstanceAIForm) {
   const { config } = props;
   // store
@@ -32,8 +38,10 @@ export function InstanceAIForm(props: IInstanceAIForm) {
     formState: { errors, isSubmitting },
   } = useForm<AIFormValues>({
     defaultValues: {
-      LLM_API_KEY: config["LLM_API_KEY"],
-      LLM_MODEL: config["LLM_MODEL"],
+      LLM_PROVIDER: config["LLM_PROVIDER"] || "openai",
+      LLM_API_KEY: config["LLM_API_KEY"] || "",
+      LLM_MODEL: config["LLM_MODEL"] || "gpt-4o-mini",
+      LLM_BASE_URL: config["LLM_BASE_URL"] || "",
     },
   });
 
@@ -44,39 +52,37 @@ export function InstanceAIForm(props: IInstanceAIForm) {
       label: "LLM Model",
       description: (
         <>
-          Choose an OpenAI engine.{" "}
+          Enter the model identifier for your selected provider.{" "}
           <a
-            href="https://platform.openai.com/docs/models/overview"
+            href="https://docs.anthropic.com/en/docs/about-claude/models/overview"
             target="_blank"
             className="text-accent-primary hover:underline"
             rel="noreferrer"
           >
-            Learn more
+            Anthropic models
           </a>
         </>
       ),
-      placeholder: "gpt-4o-mini",
+      placeholder: "gpt-4o-mini or claude-3-5-sonnet-20241022",
       error: Boolean(errors.LLM_MODEL),
+      required: false,
+    },
+    {
+      key: "LLM_BASE_URL",
+      type: "text",
+      label: "Base URL",
+      description:
+        "Optional. OpenAI-compatible endpoints usually include /v1; Anthropic proxies should follow their service URL.",
+      placeholder: "https://api.openai.com/v1",
+      error: Boolean(errors.LLM_BASE_URL),
       required: false,
     },
     {
       key: "LLM_API_KEY",
       type: "password",
       label: "API key",
-      description: (
-        <>
-          You will find your API key{" "}
-          <a
-            href="https://platform.openai.com/api-keys"
-            target="_blank"
-            className="text-accent-primary hover:underline"
-            rel="noreferrer"
-          >
-            here.
-          </a>
-        </>
-      ),
-      placeholder: "sk-asddassdfasdefqsdfasd23das3dasdcasd",
+      description: "Use the API key for the selected provider or gateway.",
+      placeholder: "sk-...",
       error: Boolean(errors.LLM_API_KEY),
       required: false,
     },
@@ -100,10 +106,35 @@ export function InstanceAIForm(props: IInstanceAIForm) {
     <div className="space-y-8">
       <div className="space-y-3">
         <div>
-          <div className="pb-1 text-18 font-medium text-primary">OpenAI</div>
-          <div className="text-13 font-regular text-tertiary">If you use ChatGPT, this is for you.</div>
+          <div className="pb-1 text-18 font-medium text-primary">AI provider</div>
+          <div className="text-13 font-regular text-tertiary">
+            Configure an OpenAI-compatible endpoint or Anthropic for Plane AI features.
+          </div>
         </div>
         <div className="grid-col grid w-full grid-cols-1 items-center justify-between gap-x-12 gap-y-8 lg:grid-cols-3">
+          <div className="flex flex-col gap-1">
+            <h4 className="text-13 text-tertiary">Provider</h4>
+            <Controller
+              control={control}
+              name="LLM_PROVIDER"
+              render={({ field: { value, onChange } }) => (
+                <CustomSelect
+                  value={value || "openai"}
+                  label={AI_PROVIDER_OPTIONS[value] || AI_PROVIDER_OPTIONS.openai}
+                  onChange={onChange}
+                  buttonClassName="rounded-md border-subtle"
+                  input
+                >
+                  {Object.entries(AI_PROVIDER_OPTIONS).map(([key, label]) => (
+                    <CustomSelect.Option key={key} value={key} className="w-full">
+                      {label}
+                    </CustomSelect.Option>
+                  ))}
+                </CustomSelect>
+              )}
+            />
+            <p className="pt-0.5 text-11 text-tertiary">Choose the provider used by the existing Plane AI endpoints.</p>
+          </div>
           {aiFormFields.map((field) => (
             <ControllerInput
               key={field.key}
