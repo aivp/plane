@@ -17,7 +17,8 @@ from rest_framework import status
 
 class WorkspaceUserPreferenceViewSet(BaseAPIView):
     model = WorkspaceUserPreference
-    use_read_replica = True
+    # GET creates missing preferences and must reflect recent PATCH updates.
+    use_read_replica = False
 
     def get_serializer_class(self):
         return WorkspaceUserPreferenceSerializer
@@ -81,21 +82,28 @@ class WorkspaceUserPreferenceViewSet(BaseAPIView):
     @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
     def patch(self, request, slug):
         for data in request.data:
-            key = data.pop("key", None)
+            key = data.get("key")
             if not key:
                 continue
 
-            preference = WorkspaceUserPreference.objects.filter(key=key, workspace__slug=slug).first()
+            preference = WorkspaceUserPreference.objects.filter(
+                key=key, workspace__slug=slug, user=request.user
+            ).first()
 
             if not preference:
                 continue
 
+            update_fields = []
+
             if "is_pinned" in data:
                 preference.is_pinned = data["is_pinned"]
+                update_fields.append("is_pinned")
 
             if "sort_order" in data:
                 preference.sort_order = data["sort_order"]
+                update_fields.append("sort_order")
 
-            preference.save(update_fields=["is_pinned", "sort_order"])
+            if update_fields:
+                preference.save(update_fields=update_fields)
 
         return Response({"message": "Successfully updated"}, status=status.HTTP_200_OK)
