@@ -191,13 +191,14 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   const cycleFilterConfig = useMemo(
     () =>
       getCycleFilterConfig<TWorkItemFilterProperty>("cycle_id")({
-        isEnabled: isFilterEnabled("cycle_id") && project?.cycle_view === true && cycles !== undefined,
+        isEnabled: isFilterEnabled("cycle_id") && (projectId ? project?.cycle_view === true : true),
         filterIcon: CycleIcon,
         getOptionIcon: (cycleGroup) => <CycleGroupIcon cycleGroup={cycleGroup} className="h-3.5 w-3.5 flex-shrink-0" />,
+        getGroupLabel: projectId ? undefined : (cycle) => getProjectById(cycle.project_id)?.name,
         cycles: cycles ?? [],
         ...operatorConfigs,
       }),
-    [isFilterEnabled, project?.cycle_view, cycles, operatorConfigs]
+    [isFilterEnabled, projectId, project?.cycle_view, cycles, getProjectById, operatorConfigs]
   );
 
   // module filter config

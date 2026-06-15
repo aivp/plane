@@ -7,6 +7,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { isEqual, cloneDeep } from "lodash-es";
 import { observer } from "mobx-react";
+import useSWR from "swr";
 // plane imports
 import { DEFAULT_GLOBAL_VIEWS_LIST, EUserPermissionsLevel } from "@plane/constants";
 import { setToast, TOAST_TYPE } from "@plane/propel/toast";
@@ -16,6 +17,8 @@ import { EUserProjectRoles, EViewAccess } from "@plane/types";
 import { removeNillKeys } from "@/components/issues/issue-layouts/utils";
 import { CreateUpdateWorkspaceViewModal } from "@/components/workspace/views/modal";
 // hooks
+import { WORKSPACE_CYCLES } from "@/constants/fetch-keys";
+import { useCycle } from "@/hooks/store/use-cycle";
 import { useGlobalView } from "@/hooks/store/use-global-view";
 import { useLabel } from "@/hooks/store/use-label";
 import { useMember } from "@/hooks/store/use-member";
@@ -41,7 +44,8 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
   const { getViewDetailsById, updateGlobalView } = useGlobalView();
   const { data: currentUser } = useUser();
   const { allowPermissions } = useUserPermissions();
-  const { joinedProjectIds } = useProject();
+  const { joinedProjectIds, getProjectById } = useProject();
+  const { cycleMap, fetchWorkspaceCycles } = useCycle();
   const {
     workspace: { getWorkspaceMemberIds },
   } = useMember();
@@ -56,6 +60,38 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
   const isDefaultView = typeof entityId === "string" && DEFAULT_GLOBAL_VIEWS_LIST.some((view) => view.key === entityId);
   const isViewLocked = viewDetails ? viewDetails?.is_locked : false;
   const isCurrentUserOwner = viewDetails ? viewDetails.owned_by === currentUser?.id : false;
+  const shouldLoadWorkspaceCycles = props.filtersToShowByLayout.includes("cycle_id");
+  const joinedProjectOrder = new Map(joinedProjectIds.map((projectId, index) => [projectId, index]));
+  const workspaceCycleIds = shouldLoadWorkspaceCycles
+    ? Object.values(cycleMap ?? {})
+        .filter((cycle) => {
+          const project = getProjectById(cycle.project_id);
+          return (
+            joinedProjectOrder.has(cycle.project_id) &&
+            !cycle.archived_at &&
+            project?.cycle_view === true &&
+            !project?.archived_at
+          );
+        })
+        .sort((a, b) => {
+          const projectSortOrder =
+            (joinedProjectOrder.get(a.project_id) ?? Number.MAX_SAFE_INTEGER) -
+            (joinedProjectOrder.get(b.project_id) ?? Number.MAX_SAFE_INTEGER);
+          if (projectSortOrder !== 0) return projectSortOrder;
+          return a.sort_order - b.sort_order;
+        })
+        .map((cycle) => cycle.id)
+    : undefined;
+
+  useSWR(
+    shouldLoadWorkspaceCycles ? WORKSPACE_CYCLES(workspaceSlug) : null,
+    () => fetchWorkspaceCycles(workspaceSlug),
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+    }
+  );
+
   const canCreateView = useMemo(
     () => enableSaveView && !props.saveViewOptions?.isDisabled && hasWorkspaceMemberLevelPermissions,
     [enableSaveView, props.saveViewOptions?.isDisabled, hasWorkspaceMemberLevelPermissions]
@@ -191,6 +227,7 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
         memberIds={getWorkspaceMemberIds(workspaceSlug)}
         labelIds={getWorkspaceLabelIds(workspaceSlug)}
         projectIds={joinedProjectIds}
+        cycleIds={workspaceCycleIds}
         saveViewOptions={saveViewOptions}
         updateViewOptions={updateViewOptions}
       >

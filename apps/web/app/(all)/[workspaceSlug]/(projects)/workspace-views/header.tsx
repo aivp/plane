@@ -116,7 +116,7 @@ export const GlobalIssuesHeader = observer(function GlobalIssuesHeader() {
   ) as ICustomSearchSelectOption[];
   const currentLayoutFilters = useMemo(() => {
     const layout = activeLayout ?? EIssueLayoutTypes.SPREADSHEET;
-    return ISSUE_DISPLAY_FILTERS_BY_PAGE.my_issues.layoutOptions[layout];
+    return ISSUE_DISPLAY_FILTERS_BY_PAGE.workspace_views.layoutOptions[layout];
   }, [activeLayout]);
 
   return (

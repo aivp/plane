@@ -140,7 +140,7 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
         enableUpdateView
         entityId={globalViewId}
         entityType={EIssuesStoreType.GLOBAL}
-        filtersToShowByLayout={ISSUE_DISPLAY_FILTERS_BY_PAGE.my_issues.filters}
+        filtersToShowByLayout={ISSUE_DISPLAY_FILTERS_BY_PAGE.workspace_views.filters}
         initialWorkItemFilters={initialWorkItemFilters}
         updateFilters={updateFilterExpression.bind(updateFilterExpression, workspaceSlug, globalViewId)}
         workspaceSlug={workspaceSlug}

@@ -175,43 +175,55 @@ export function CustomSearchSelect(props: ICustomSearchSelectProps) {
                     >
                       {filteredOptions ? (
                         filteredOptions.length > 0 ? (
-                          filteredOptions.map((option) => (
-                            <Combobox.Option
-                              key={option.value}
-                              value={option.value}
-                              className={({ active }) =>
-                                cn(
-                                  "flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none",
-                                  {
-                                    "bg-layer-transparent-hover": active,
-                                    "cursor-not-allowed text-placeholder opacity-60": option.disabled,
+                          filteredOptions.map((option, index) => {
+                            const previousOption = index > 0 ? filteredOptions[index - 1] : undefined;
+                            const shouldShowGroupLabel =
+                              option.groupLabel && option.groupLabel !== previousOption?.groupLabel;
+
+                            return (
+                              <React.Fragment key={option.value}>
+                                {shouldShowGroupLabel && (
+                                  <div className="px-1 pt-2 pb-1 text-10 font-medium text-tertiary first:pt-0">
+                                    {option.groupLabel}
+                                  </div>
+                                )}
+                                <Combobox.Option
+                                  value={option.value}
+                                  className={({ active }) =>
+                                    cn(
+                                      "flex w-full cursor-pointer items-center justify-between gap-2 truncate rounded-sm px-1 py-1.5 select-none",
+                                      {
+                                        "bg-layer-transparent-hover": active,
+                                        "cursor-not-allowed text-placeholder opacity-60": option.disabled,
+                                      }
+                                    )
                                   }
-                                )
-                              }
-                              onClick={() => {
-                                if (!multiple) closeDropdown();
-                              }}
-                              disabled={option.disabled}
-                            >
-                              {({ selected }) => (
-                                <>
-                                  <span className="flex-grow truncate">{option.content}</span>
-                                  {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
-                                  {option.tooltip && (
+                                  onClick={() => {
+                                    if (!multiple) closeDropdown();
+                                  }}
+                                  disabled={option.disabled}
+                                >
+                                  {({ selected }) => (
                                     <>
-                                      {typeof option.tooltip === "string" ? (
-                                        <Tooltip tooltipContent={option.tooltip}>
-                                          <Info className="h-3.5 w-3.5 flex-shrink-0 cursor-pointer text-secondary" />
-                                        </Tooltip>
-                                      ) : (
-                                        option.tooltip
+                                      <span className="flex-grow truncate">{option.content}</span>
+                                      {selected && <CheckIcon className="h-3.5 w-3.5 flex-shrink-0" />}
+                                      {option.tooltip && (
+                                        <>
+                                          {typeof option.tooltip === "string" ? (
+                                            <Tooltip tooltipContent={option.tooltip}>
+                                              <Info className="h-3.5 w-3.5 flex-shrink-0 cursor-pointer text-secondary" />
+                                            </Tooltip>
+                                          ) : (
+                                            option.tooltip
+                                          )}
+                                        </>
                                       )}
                                     </>
                                   )}
-                                </>
-                              )}
-                            </Combobox.Option>
-                          ))
+                                </Combobox.Option>
+                              </React.Fragment>
+                            );
+                          })
                         ) : (
                           <p className="px-1.5 py-1 text-placeholder italic">{noResultsMessage}</p>
                         )

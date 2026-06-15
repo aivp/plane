@@ -21,6 +21,7 @@ export interface TOptionTransforms<TItem, TValue extends TFilterValue = string, 
   getId: (item: TItem) => string;
   getLabel: (item: TItem) => string;
   getValue: (item: TItem) => TValue;
+  getGroupLabel?: (item: TItem) => string | undefined;
   getIconData?: (item: TItem) => TIconData;
 }
 
@@ -55,6 +56,7 @@ export const getSingleSelectConfig = <
         id: transforms.getId(item),
         label: transforms.getLabel(item),
         value: transforms.getValue(item),
+        groupLabel: transforms.getGroupLabel?.(item),
         icon: iconConfig?.getOptionIcon?.(transforms.getIconData?.(item) as TIconData),
       })),
   });
@@ -92,6 +94,7 @@ export const getMultiSelectConfig = <
         id: transforms.getId(item),
         label: transforms.getLabel(item),
         value: transforms.getValue(item),
+        groupLabel: transforms.getGroupLabel?.(item),
         icon: iconConfig?.getOptionIcon?.(transforms.getIconData?.(item) as TIconData),
       })),
   });

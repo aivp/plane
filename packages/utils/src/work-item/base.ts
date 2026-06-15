@@ -105,6 +105,7 @@ export const handleIssueQueryParamsByLayout = (
   layout: EIssueLayoutTypes | undefined,
   viewType:
     | "my_issues"
+    | "workspace_views"
     | "issues"
     | "profile_issues"
     | "archived_issues"

@@ -203,6 +203,43 @@ export const ISSUE_DISPLAY_FILTERS_BY_PAGE: TIssueFiltersToDisplayByPageType = {
       },
     },
   },
+  workspace_views: {
+    filters: [
+      "priority",
+      "state_group",
+      "label_id",
+      "assignee_id",
+      "created_by_id",
+      "subscriber_id",
+      "project_id",
+      "cycle_id",
+      "start_date",
+      "target_date",
+    ],
+    layoutOptions: {
+      spreadsheet: {
+        display_properties: ISSUE_DISPLAY_PROPERTIES_KEYS,
+        display_filters: {
+          order_by: [],
+          type: ["active", "backlog"],
+        },
+        extra_options: {
+          access: true,
+          values: ["sub_issue"],
+        },
+      },
+      list: {
+        display_properties: ISSUE_DISPLAY_PROPERTIES_KEYS,
+        display_filters: {
+          type: ["active", "backlog"],
+        },
+        extra_options: {
+          access: false,
+          values: [],
+        },
+      },
+    },
+  },
   issues: {
     filters: [
       "priority",

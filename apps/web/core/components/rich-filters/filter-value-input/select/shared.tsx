@@ -44,7 +44,8 @@ export const getFormattedOptions = <V extends TFilterValue>(options: IFilterOpti
         <span>{option.label}</span>
       </div>
     ),
-    query: option.label.toString().toLowerCase(),
+    query: `${option.label.toString()} ${option.groupLabel ?? ""}`.toLowerCase(),
+    groupLabel: option.groupLabel,
     disabled: option.disabled,
     tooltip: option.description,
   }));

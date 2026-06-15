@@ -28,6 +28,7 @@ export type TBaseFilterFieldConfig = {
  * - id: Unique identifier for the option
  * - label: Display text shown to users
  * - value: Actual value used in filtering
+ * - groupLabel: Optional group heading for grouped select dropdowns
  * - icon: Optional icon component
  * - iconClassName: CSS class for icon styling
  * - disabled: Whether option can be selected
@@ -37,6 +38,7 @@ export interface IFilterOption<V extends TFilterValue> {
   id: string;
   label: string;
   value: V;
+  groupLabel?: string;
   icon?: React.ReactNode;
   iconClassName?: string;
   disabled?: boolean;

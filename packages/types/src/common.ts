@@ -37,6 +37,7 @@ export type ICustomSearchSelectOption = {
   value: any;
   query: string;
   content: React.ReactNode;
+  groupLabel?: string;
   disabled?: boolean;
   tooltip?: string | React.ReactNode;
 };

@@ -17,6 +17,7 @@ import { createFilterConfig, getMultiSelectConfig, createOperatorConfigEntry } f
 export type TCreateCycleFilterParams = TCreateFilterConfigParams &
   IFilterIconConfig<TCycleGroups> & {
     cycles: ICycle[];
+    getGroupLabel?: (cycle: ICycle) => string | undefined;
   };
 
 /**
@@ -31,6 +32,7 @@ export const getCycleMultiSelectConfig = (params: TCreateCycleFilterParams, sing
       getId: (cycle) => cycle.id,
       getLabel: (cycle) => cycle.name,
       getValue: (cycle) => cycle.id,
+      getGroupLabel: params.getGroupLabel,
       getIconData: (cycle) => cycle.status || "draft",
     },
     {

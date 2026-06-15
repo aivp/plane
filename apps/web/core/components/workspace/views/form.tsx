@@ -136,7 +136,9 @@ export const WorkspaceViewForm = observer(function WorkspaceViewForm(props: Prop
                   render={({ field: { onChange: onDisplayPropertiesChange, value: displayProperties } }) => (
                     <FiltersDropdown title={t("common.display")}>
                       <DisplayFiltersSelection
-                        layoutDisplayFiltersOptions={ISSUE_DISPLAY_FILTERS_BY_PAGE.my_issues.layoutOptions.spreadsheet}
+                        layoutDisplayFiltersOptions={
+                          ISSUE_DISPLAY_FILTERS_BY_PAGE.workspace_views.layoutOptions.spreadsheet
+                        }
                         displayFilters={displayFilters ?? {}}
                         handleDisplayFiltersUpdate={(updatedDisplayFilter: Partial<IIssueDisplayFilterOptions>) => {
                           onDisplayFiltersChange({
@@ -167,7 +169,7 @@ export const WorkspaceViewForm = observer(function WorkspaceViewForm(props: Prop
                 <WorkspaceLevelWorkItemFiltersHOC
                   entityId={data?.id}
                   entityType={EIssuesStoreType.GLOBAL}
-                  filtersToShowByLayout={ISSUE_DISPLAY_FILTERS_BY_PAGE.my_issues.filters}
+                  filtersToShowByLayout={ISSUE_DISPLAY_FILTERS_BY_PAGE.workspace_views.filters}
                   initialWorkItemFilters={workItemFilters}
                   isTemporary
                   updateFilters={(updateFilters) => onFiltersChange(updateFilters)}
