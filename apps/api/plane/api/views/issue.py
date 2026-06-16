@@ -478,6 +478,7 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
                 project_id=str(project_id),
                 current_instance=None,
                 epoch=int(timezone.now().timestamp()),
+                notification=True,
             )
 
             # Send the model activity
@@ -637,6 +638,7 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                         project_id=str(project_id),
                         current_instance=current_instance,
                         epoch=int(timezone.now().timestamp()),
+                        notification=True,
                     )
                     # Send the model activity for webhook dispatch
                     model_activity.delay(
@@ -695,6 +697,7 @@ class IssueDetailAPIEndpoint(BaseAPIView):
                         project_id=str(project_id),
                         current_instance=None,
                         epoch=int(timezone.now().timestamp()),
+                        notification=True,
                     )
                     # Send the model activity for webhook dispatch
                     model_activity.delay(
@@ -837,6 +840,7 @@ class IssueDetailAPIEndpoint(BaseAPIView):
             project_id=str(project_id),
             current_instance=current_instance,
             epoch=int(timezone.now().timestamp()),
+            notification=True,
         )
         return Response(status=status.HTTP_204_NO_CONTENT)
 

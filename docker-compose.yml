@@ -83,6 +83,8 @@ services:
 
   lark-connector:
     container_name: lark-connector
+    profiles:
+      - lark-connector
     build:
       context: ./apps/api
       dockerfile: Dockerfile.api

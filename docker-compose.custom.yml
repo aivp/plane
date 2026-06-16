@@ -187,7 +187,7 @@ services:
     <<: *app_image_policy
     image: *backend_image
     profiles:
-      - lark
+      - lark-connector
     restart: on-failure
     command: ./bin/docker-entrypoint-lark-connector.sh
     volumes:

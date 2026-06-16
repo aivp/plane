@@ -122,22 +122,29 @@ docker compose --env-file .env.custom -f docker-compose.custom.yml --profile mig
 docker compose --env-file .env.custom -f docker-compose.custom.yml up -d
 ```
 
-如果启用飞书长连接，确认 `.env.custom` 包含：
+飞书登录和主动通知不需要启动 `lark-connector`。保留以下配置即可：
 
 ```bash
-COMPOSE_PROFILES=lark
 IS_LARK_ENABLED=1
+LARK_NOTIFICATIONS_ENABLED=1
+LARK_CONNECTOR_ENABLED=0
+```
+
+如果之后需要启用飞书事件订阅长连接，再额外确认 `.env.custom` 包含：
+
+```bash
+COMPOSE_PROFILES=lark-connector
 LARK_CONNECTOR_ENABLED=1
 ```
 
 ## 飞书后台配置
 
-飞书开放平台只配置国内飞书：
+飞书开放平台只配置国内飞书。未启用长连接时，可以先不配置事件订阅：
 
 - OAuth 回调：`https://<APP_DOMAIN>/auth/lark/callback/`
 - Space OAuth 回调：`https://<APP_DOMAIN>/auth/spaces/lark/callback/`
-- 事件订阅：启用长连接模式。
-- 通讯录事件：启用用户和部门变更事件。
+- 事件订阅：仅启用 `lark-connector` 时配置长连接模式。
+- 通讯录事件：仅启用 `lark-connector` 时配置用户和部门变更事件。
 
 Plane 后台配置入口：
 
@@ -151,13 +158,20 @@ https://<APP_DOMAIN>/god-mode/authentication/lark
 
 ```bash
 docker compose --env-file .env.custom -f docker-compose.custom.yml ps
-docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=200 api worker lark-connector
+docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=200 api worker
+```
+
+启用长连接时，再查看 `lark-connector` 日志：
+
+```bash
+docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=200 lark-connector
 ```
 
 检查项：
 
 - `api`、`worker`、`beat-worker`、`web`、`admin`、`space`、`live`、`proxy` 处于 running。
-- `lark-connector` 在启用飞书时处于 running，且日志没有重复拿锁失败。
+- 未启用长连接时，`lark-connector` 不应出现在 running 服务中。
+- 启用长连接时，`lark-connector` 处于 running，且日志没有重复拿锁失败。
 - 后台 `/god-mode/authentication/lark` 连接测试成功。
 - Web 登录页出现 Feishu 登录入口。
 - Workspace 成员页管理员可打开 Feishu 导入弹窗。

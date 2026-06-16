@@ -66,6 +66,13 @@ export function InstanceLarkConfigForm(props: Props) {
   });
 
   const originURL = !isEmpty(API_BASE_URL) ? API_BASE_URL : typeof window !== "undefined" ? window.location.origin : "";
+  const connectorStatusLabel = !larkStatus
+    ? "unknown"
+    : !larkStatus.connector_enabled
+      ? "disabled"
+      : larkStatus.connector.healthy
+        ? "connected"
+        : "disconnected";
 
   const fetchLarkStatus = () =>
     instanceService
@@ -213,7 +220,7 @@ export function InstanceLarkConfigForm(props: Props) {
         title: "Connected",
         message: "Plane can reach Feishu with the configured app credentials.",
       });
-    } catch (err) {
+    } catch (_err) {
       setToast({
         type: TOAST_TYPE.ERROR,
         title: "Connection failed",
@@ -300,12 +307,12 @@ export function InstanceLarkConfigForm(props: Props) {
             </div>
             <div className="bg-layer-1 px-6 py-4 text-13 text-secondary">
               <div className="flex flex-col gap-1">
-                <div>Use the Feishu app long connection mode and run the `lark-connector` service.</div>
                 <div>
-                  Connector:{" "}
-                  <span className="font-medium text-primary">
-                    {larkStatus?.connector.healthy ? "connected" : "disconnected"}
-                  </span>
+                  Enable only for Feishu event subscriptions. OAuth login and notifications do not require the
+                  `lark-connector` service.
+                </div>
+                <div>
+                  Connector: <span className="font-medium text-primary">{connectorStatusLabel}</span>
                 </div>
                 <div>
                   Default workspace:{" "}

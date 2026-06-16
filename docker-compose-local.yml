@@ -123,6 +123,8 @@ services:
       - plane-redis
 
   lark-connector:
+    profiles:
+      - lark-connector
     build:
       context: ./apps/api
       dockerfile: Dockerfile.dev
