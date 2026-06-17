@@ -10,6 +10,24 @@ import { fileTypeFromBuffer } from "file-type";
 import type { TFileMetaDataLite, TFileSignedURLResponse } from "@plane/types";
 import { DANGEROUS_EXTENSIONS } from "@plane/constants";
 
+const FALLBACK_MIME_TYPES_BY_EXTENSION: Record<string, string> = {
+  csv: "text/csv",
+  css: "text/css",
+  gltf: "model/gltf+json",
+  js: "text/javascript",
+  json: "application/json",
+  markdown: "text/markdown",
+  md: "text/markdown",
+  mjs: "text/javascript",
+  obj: "application/octet-stream",
+  rtf: "application/rtf",
+  sql: "application/x-sql",
+  svg: "image/svg+xml",
+  text: "text/plain",
+  txt: "text/plain",
+  xml: "application/xml",
+};
+
 /**
  * @description Filename validation - checks for double extensions and dangerous patterns
  * @param {string} filename
@@ -49,6 +67,15 @@ const validateFilename = (filename: string): string | null => {
   return null;
 };
 
+const getFileExtension = (filename: string): string => {
+  const normalizedFilename = filename.trim().toLowerCase();
+  const filenameParts = normalizedFilename.split(".");
+
+  if (filenameParts.length < 2) return "";
+
+  return filenameParts[filenameParts.length - 1] ?? "";
+};
+
 /**
  * @description from the provided signed URL response, generate a payload to be used to upload the file
  * @param {TFileSignedURLResponse} signedURLResponse
@@ -81,6 +108,18 @@ const detectMimeTypeFromSignature = async (file: File): Promise<string> => {
   }
 };
 
+const getFallbackMimeType = (file: File): string => {
+  const extension = getFileExtension(file.name);
+  const mappedMimeType = FALLBACK_MIME_TYPES_BY_EXTENSION[extension];
+
+  if (mappedMimeType) return mappedMimeType;
+
+  const browserMimeType = file.type.trim();
+  if (browserMimeType && browserMimeType !== "application/octet-stream") return browserMimeType;
+
+  return "";
+};
+
 /**
  * @description Validate and detect the MIME type of a file using signature detection
  * Also performs basic security checks on filename
@@ -103,8 +142,9 @@ const validateAndDetectFileType = async (file: File): Promise<string> => {
     console.warn("Error detecting file type from signature:", _error);
   }
 
-  // fallback for unknown files
-  return "";
+  if (filenameError) return "";
+
+  return getFallbackMimeType(file);
 };
 
 /**
