@@ -11,7 +11,7 @@ import { useDropzone } from "react-dropzone";
 import { UploadCloud } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
-import type { TIssueServiceType } from "@plane/types";
+import type { TIssueAttachment, TIssueServiceType } from "@plane/types";
 import { EIssueServiceType } from "@plane/types";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
@@ -22,6 +22,8 @@ import type { TAttachmentHelpers } from "../issue-detail-widgets/attachments/hel
 // components
 import { IssueAttachmentsListItem } from "./attachment-list-item";
 import { IssueAttachmentsUploadItem } from "./attachment-list-upload-item";
+import { isAttachmentMediaPreviewable } from "./helpers";
+import { IssueAttachmentMediaPreviewModal } from "./media-preview-modal";
 // types
 import { IssueAttachmentDeleteModal } from "./delete-attachment-modal";
 
@@ -46,9 +48,10 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
   const { t } = useTranslation();
   // states
   const [isUploading, setIsUploading] = useState(false);
+  const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null);
   // store hooks
   const {
-    attachment: { getAttachmentsByIssueId },
+    attachment: { getAttachmentById, getAttachmentsByIssueId },
     attachmentDeleteModalId,
     toggleDeleteAttachmentModal,
     fetchActivities,
@@ -60,6 +63,12 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
   const { maxFileSize } = useFileSize();
   // derived values
   const issueAttachments = getAttachmentsByIssueId(issueId);
+  const mediaAttachments =
+    issueAttachments
+      ?.map((attachmentId) => getAttachmentById(attachmentId))
+      .filter(
+        (attachment): attachment is TIssueAttachment => !!attachment && isAttachmentMediaPreviewable(attachment)
+      ) ?? [];
 
   // handlers
   const handleFetchPropertyActivities = useCallback(() => {
@@ -100,7 +109,7 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
       });
       return;
     },
-    [createAttachment, maxFileSize, workspaceSlug, handleFetchPropertyActivities]
+    [createAttachment, maxFileSize, workspaceSlug, handleFetchPropertyActivities, t]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -112,11 +121,18 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
 
   return (
     <>
-      {uploadStatus?.map((uploadStatus) => (
-        <IssueAttachmentsUploadItem key={uploadStatus.id} uploadStatus={uploadStatus} />
+      {uploadStatus?.map((currentUploadStatus) => (
+        <IssueAttachmentsUploadItem key={currentUploadStatus.id} uploadStatus={currentUploadStatus} />
       ))}
       {issueAttachments && (
         <>
+          <IssueAttachmentMediaPreviewModal
+            activeAttachmentId={previewAttachmentId}
+            attachments={mediaAttachments}
+            isOpen={!!previewAttachmentId}
+            onActiveAttachmentIdChange={setPreviewAttachmentId}
+            onClose={() => setPreviewAttachmentId(null)}
+          />
           {attachmentDeleteModalId && (
             <IssueAttachmentDeleteModal
               isOpen={Boolean(attachmentDeleteModalId)}
@@ -147,6 +163,7 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
                 attachmentId={attachmentId}
                 disabled={disabled}
                 issueServiceType={issueServiceType}
+                onPreviewAttachment={setPreviewAttachmentId}
               />
             ))}
           </div>
