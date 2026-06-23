@@ -67,7 +67,14 @@ const DialogOverlay = memo(function DialogOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof BaseDialog.Backdrop>) {
-  return <BaseDialog.Backdrop data-slot="dialog-overlay" className={cn(OVERLAY_CLASSNAME, className)} {...props} />;
+  return (
+    <BaseDialog.Backdrop
+      data-prevent-outside-click
+      data-slot="dialog-overlay"
+      className={cn(OVERLAY_CLASSNAME, className)}
+      {...props}
+    />
+  );
 });
 DialogOverlay.displayName = "DialogOverlay";
 

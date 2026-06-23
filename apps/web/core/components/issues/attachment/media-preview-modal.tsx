@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, type SyntheticEvent } from "react";
 import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
 import { Dialog, EDialogWidth } from "@plane/propel/dialog";
 import { IconButton } from "@plane/propel/icon-button";
@@ -19,6 +19,10 @@ type TIssueAttachmentMediaPreviewModal = {
   isOpen: boolean;
   onActiveAttachmentIdChange: (attachmentId: string) => void;
   onClose: () => void;
+};
+
+const stopPreviewEventPropagation = (event: SyntheticEvent) => {
+  event.stopPropagation();
 };
 
 export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPreviewModal) {
@@ -46,6 +50,8 @@ export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPre
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
         onClose();
         return;
       }
@@ -79,8 +85,13 @@ export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPre
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Panel
+        data-issue-attachment-media-preview
+        data-prevent-outside-click
         width={EDialogWidth.VIIXL}
         className="flex h-[min(86vh,760px)] max-h-[86vh] w-[min(94vw,1120px)] max-w-none flex-col overflow-hidden"
+        onClick={stopPreviewEventPropagation}
+        onMouseDown={stopPreviewEventPropagation}
+        onPointerDown={stopPreviewEventPropagation}
       >
         <div className="flex h-12 flex-shrink-0 items-center justify-between gap-3 border-b border-subtle px-4">
           <Dialog.Title className="truncate text-14 font-medium">{fileName}</Dialog.Title>
