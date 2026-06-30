@@ -36,6 +36,7 @@ export const UserMenuRoot = observer(function UserMenuRoot() {
   const isUserInstanceAdmin = false;
   // translation
   const { t } = useTranslation();
+  const currentUserFullName = [currentUser?.first_name, currentUser?.last_name].filter(Boolean).join(" ");
 
   const handleSignOut = () => {
     signOut().catch(() =>
@@ -87,8 +88,8 @@ export const UserMenuRoot = observer(function UserMenuRoot() {
           showDefaultWhenEmpty
         />
         <div className="absolute inset-0 bg-layer-1/50" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="flex flex-col items-center gap-y-2">
+        <div className="absolute top-1/2 left-1/2 w-full -translate-x-1/2 -translate-y-1/2 px-3">
+          <div className="flex min-w-0 flex-col items-center gap-y-2">
             <div>
               <Avatar
                 name={currentUser?.display_name}
@@ -98,11 +99,13 @@ export const UserMenuRoot = observer(function UserMenuRoot() {
                 className="text-18 font-medium"
               />
             </div>
-            <div className="text-center">
-              <p className="text-body-sm-medium">
+            <div className="max-w-full min-w-0 text-center">
+              <p className="truncate text-body-sm-medium" title={currentUserFullName}>
                 {currentUser?.first_name} {currentUser?.last_name}
               </p>
-              <p className="text-caption-md-regular">{currentUser?.email}</p>
+              <p className="truncate text-caption-md-regular" title={currentUser?.email}>
+                {currentUser?.email}
+              </p>
             </div>
           </div>
         </div>
