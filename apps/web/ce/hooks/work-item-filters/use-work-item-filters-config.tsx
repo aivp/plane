@@ -133,7 +133,9 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
   const projects = useMemo(
     () =>
       projectIds
-        ? (projectIds.map((projectId) => getProjectById(projectId)).filter((project) => project) as IProject[])
+        ? (projectIds
+            .map((workspaceProjectId) => getProjectById(workspaceProjectId))
+            .filter((workspaceProject) => workspaceProject) as IProject[])
         : [],
     [projectIds, getProjectById]
   );
@@ -179,12 +181,13 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
         isEnabled: isFilterEnabled("label_id") && workItemLabels !== undefined,
         filterIcon: LabelPropertyIcon,
         labels: workItemLabels ?? [],
+        getGroupLabel: projectId ? undefined : (label) => getProjectById(label.project_id)?.name,
         getOptionIcon: (color) => (
           <span className="flex size-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: color }} />
         ),
         ...operatorConfigs,
       }),
-    [isFilterEnabled, workItemLabels, operatorConfigs]
+    [isFilterEnabled, projectId, workItemLabels, getProjectById, operatorConfigs]
   );
 
   // cycle filter config
@@ -357,7 +360,7 @@ export const useWorkItemFiltersConfig = (props: TUseWorkItemFiltersConfigProps):
         isEnabled: isFilterEnabled("project_id") && projects !== undefined,
         filterIcon: Briefcase,
         projects: projects,
-        getOptionIcon: (project) => <Logo logo={project.logo_props} size={12} />,
+        getOptionIcon: (projectOption) => <Logo logo={projectOption.logo_props} size={12} />,
         ...operatorConfigs,
       }),
     [isFilterEnabled, projects, operatorConfigs]

@@ -72,7 +72,7 @@ export const CreateUpdateWorkspaceViewModal = observer(function CreateUpdateWork
     try {
       const payloadData: Partial<IWorkspaceView> = {
         ...payload,
-        query: {
+        rich_filters: {
           ...payload?.rich_filters,
         },
       };

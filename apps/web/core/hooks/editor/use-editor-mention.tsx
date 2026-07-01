@@ -21,6 +21,12 @@ type TArgs = {
   searchEntity: (payload: TSearchEntityRequestPayload) => Promise<TSearchResponse>;
 };
 
+type TUserMentionSearchPayload = TSearchEntityRequestPayload & {
+  include_all_user_mentions?: boolean;
+};
+
+const USER_MENTION_SEARCH_COUNT = 20;
+
 export const useEditorMention = (args: TArgs) => {
   const { enableAdvancedMentions = false, searchEntity } = args;
   // additional mentions
@@ -31,11 +37,14 @@ export const useEditorMention = (args: TArgs) => {
   const fetchMentions = useCallback(
     async (query: string): Promise<TMentionSection[]> => {
       try {
-        const res = await searchEntity({
-          count: 5,
+        const trimmedQuery = query.trim();
+        const payload: TUserMentionSearchPayload = {
+          count: USER_MENTION_SEARCH_COUNT,
+          include_all_user_mentions: trimmedQuery === "" ? true : undefined,
           query_type: editorMentionTypes,
           query,
-        });
+        };
+        const res = await searchEntity(payload);
         const suggestionSections: TMentionSection[] = [];
         if (!res) {
           throw new Error("No response found");

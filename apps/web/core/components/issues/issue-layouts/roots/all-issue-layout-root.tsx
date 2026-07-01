@@ -25,6 +25,7 @@ import { useIssues } from "@/hooks/store/use-issues";
 import { useAppRouter } from "@/hooks/use-app-router";
 import { IssuesStoreContext } from "@/hooks/use-issue-layout-store";
 import { useWorkspaceIssueProperties } from "@/hooks/use-workspace-issue-properties";
+import { getWorkspaceViewRichFilters } from "@/store/issue/workspace/filter.store";
 
 type Props = {
   isDefaultView: boolean;
@@ -64,7 +65,7 @@ export const AllIssueLayoutRoot = observer(function AllIssueLayoutRoot(props: Pr
       displayFilters: workItemFilters?.displayFilters,
       displayProperties: workItemFilters?.displayProperties,
       kanbanFilters: workItemFilters?.kanbanFilters,
-      richFilters: viewDetails?.rich_filters ?? {},
+      richFilters: workItemFilters?.richFilters ?? getWorkspaceViewRichFilters(viewDetails),
     };
   }, [globalViewId, viewDetails, workItemFilters]);
 

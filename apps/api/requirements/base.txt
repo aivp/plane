@@ -63,6 +63,8 @@ urllib3>=2.7.0
 zxcvbn==4.4.28
 # timezone
 pytz==2024.1
+# pinyin
+pypinyin==0.55.0
 # jwt
 PyJWT==2.12.0
 # OpenTelemetry

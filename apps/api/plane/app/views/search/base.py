@@ -23,6 +23,7 @@ from django.db.models.functions import Coalesce, Concat
 from django.utils import timezone
 
 # Third party imports
+from pypinyin import Style, lazy_pinyin
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -40,6 +41,64 @@ from plane.db.models import (
     ProjectPage,
     WorkspaceMember,
 )
+
+
+def normalize_search_text(value):
+    return " ".join(str(value or "").lower().strip().split())
+
+
+def compact_search_text(value):
+    return normalize_search_text(value).replace(" ", "")
+
+
+def pinyin_candidates(value):
+    value = str(value or "").strip()
+    if not value:
+        return set()
+
+    syllables = lazy_pinyin(value, style=Style.NORMAL, errors="default")
+    initials = lazy_pinyin(value, style=Style.FIRST_LETTER, errors="default")
+    return {
+        normalize_search_text(value),
+        normalize_search_text(" ".join(syllables)),
+        compact_search_text("".join(syllables)),
+        compact_search_text("".join(initials)),
+    }
+
+
+def user_mention_matches_query(user, query):
+    normalized_query = normalize_search_text(query)
+    compact_query = compact_search_text(query)
+    if not normalized_query:
+        return True
+
+    values = [
+        user.get("member__first_name"),
+        user.get("member__last_name"),
+        user.get("member__display_name"),
+        f"{user.get('member__first_name') or ''} {user.get('member__last_name') or ''}",
+    ]
+
+    for value in values:
+        normalized_value = normalize_search_text(value)
+        if normalized_query in normalized_value or compact_query in compact_search_text(value):
+            return True
+
+        candidates = pinyin_candidates(value)
+        if normalized_query in candidates or compact_query in candidates:
+            return True
+        if any(normalized_query in candidate or compact_query in candidate for candidate in candidates):
+            return True
+
+    return False
+
+
+def serialize_user_mention(user):
+    return {
+        "member__avatar_url": user["member__avatar_url"],
+        "member__display_name": user["member__display_name"],
+        "member__id": user["member__id"],
+    }
 
 
 class GlobalSearchEndpoint(BaseAPIView):
@@ -302,65 +361,79 @@ class GlobalSearchEndpoint(BaseAPIView):
 
 
 class SearchEndpoint(BaseAPIView):
+    def user_mention_queryset(self, slug, project_id=None):
+        model = ProjectMember if project_id else WorkspaceMember
+        filters = {
+            "is_active": True,
+            "workspace__slug": slug,
+            "member__is_bot": False,
+        }
+        if project_id:
+            filters["project_id"] = project_id
+
+        return (
+            model.objects.filter(**filters)
+            .annotate(
+                member__avatar_url=Case(
+                    When(
+                        member__avatar_asset__isnull=False,
+                        then=Concat(
+                            Value("/api/assets/v2/static/"),
+                            "member__avatar_asset",
+                            Value("/"),
+                        ),
+                    ),
+                    When(
+                        member__avatar_asset__isnull=True,
+                        then="member__avatar",
+                    ),
+                    default=Value(None),
+                    output_field=CharField(),
+                )
+            )
+            .order_by("-created_at")
+            .distinct()
+            .values(
+                "member__avatar_url",
+                "member__display_name",
+                "member__first_name",
+                "member__id",
+                "member__last_name",
+            )
+        )
+
+    def search_user_mentions(self, slug, query, count, project_id=None, include_all_user_mentions=False):
+        users = [
+            user
+            for user in self.user_mention_queryset(slug, project_id)
+            if user_mention_matches_query(user, query)
+        ]
+
+        if project_id and include_all_user_mentions and not normalize_search_text(query):
+            return [serialize_user_mention(user) for user in users]
+
+        return [serialize_user_mention(user) for user in users[:count]]
+
     def get(self, request, slug):
-        query = request.query_params.get("query", False)
+        query = request.query_params.get("query", "")
         query_types = request.query_params.get("query_type", "user_mention").split(",")
         query_types = [qt.strip() for qt in query_types]
         count = int(request.query_params.get("count", 5))
         project_id = request.query_params.get("project_id", None)
+        include_all_user_mentions = request.query_params.get("include_all_user_mentions", "false").lower() == "true"
 
         response_data = {}
 
         if project_id:
             for query_type in query_types:
                 if query_type == "user_mention":
-                    fields = [
-                        "member__first_name",
-                        "member__last_name",
-                        "member__display_name",
-                    ]
-                    q = Q()
-
-                    if query:
-                        for field in fields:
-                            q |= Q(**{f"{field}__icontains": query})
-
-                    users = (
-                        ProjectMember.objects.filter(
-                            q,
-                            is_active=True,
-                            workspace__slug=slug,
-                            member__is_bot=False,
-                            project_id=project_id,
-                        )
-                        .annotate(
-                            member__avatar_url=Case(
-                                When(
-                                    member__avatar_asset__isnull=False,
-                                    then=Concat(
-                                        Value("/api/assets/v2/static/"),
-                                        "member__avatar_asset",
-                                        Value("/"),
-                                    ),
-                                ),
-                                When(
-                                    member__avatar_asset__isnull=True,
-                                    then="member__avatar",
-                                ),
-                                default=Value(None),
-                                output_field=CharField(),
-                            )
-                        )
-                        .order_by("-created_at")
+                    response_data["user_mention"] = self.search_user_mentions(
+                        slug,
+                        query,
+                        count,
+                        project_id=project_id,
+                        include_all_user_mentions=include_all_user_mentions,
                     )
-
-                    users = users.distinct().values(
-                        "member__avatar_url",
-                        "member__display_name",
-                        "member__id",
-                    )
-
-                    response_data["user_mention"] = list(users[:count])
 
                 elif query_type == "project":
                     fields = ["name", "identifier"]
@@ -527,45 +600,7 @@ class SearchEndpoint(BaseAPIView):
         else:
             for query_type in query_types:
                 if query_type == "user_mention":
-                    fields = [
-                        "member__first_name",
-                        "member__last_name",
-                        "member__display_name",
-                    ]
-                    q = Q()
-
-                    if query:
-                        for field in fields:
-                            q |= Q(**{f"{field}__icontains": query})
-                    users = (
-                        WorkspaceMember.objects.filter(
-                            q,
-                            is_active=True,
-                            workspace__slug=slug,
-                            member__is_bot=False,
-                        )
-                        .annotate(
-                            member__avatar_url=Case(
-                                When(
-                                    member__avatar_asset__isnull=False,
-                                    then=Concat(
-                                        Value("/api/assets/v2/static/"),
-                                        "member__avatar_asset",
-                                        Value("/"),
-                                    ),
-                                ),
-                                When(
-                                    member__avatar_asset__isnull=True,
-                                    then="member__avatar",
-                                ),
-                                default=Value(None),
-                                output_field=models.CharField(),
-                            )
-                        )
-                        .order_by("-created_at")
-                        .values("member__avatar_url", "member__display_name", "member__id")[:count]
-                    )
-                    response_data["user_mention"] = list(users)
+                    response_data["user_mention"] = self.search_user_mentions(slug, query, count)
 
                 elif query_type == "project":
                     fields = ["name", "identifier"]

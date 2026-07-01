@@ -13,15 +13,18 @@ import { EIssueFilterType } from "@plane/constants";
 import type {
   IIssueDisplayFilterOptions,
   IIssueDisplayProperties,
+  IIssueFilterOptions,
   TIssueKanbanFilters,
   IIssueFilters,
   TIssueParams,
   TStaticViewTypes,
   IssuePaginationOptions,
   TWorkItemFilterExpression,
+  TWorkItemFilterProperty,
   TSupportedFilterForUpdate,
+  IWorkspaceView,
 } from "@plane/types";
-import { EIssuesStoreType, EIssueLayoutTypes, STATIC_VIEW_TYPES } from "@plane/types";
+import { EIssuesStoreType, EIssueLayoutTypes, LOGICAL_OPERATOR, STATIC_VIEW_TYPES } from "@plane/types";
 import { handleIssueQueryParamsByLayout } from "@plane/utils";
 // services
 import { WorkspaceService } from "@/services/workspace.service";
@@ -33,6 +36,57 @@ import type { IIssueRootStore } from "../root.store";
 type TWorkspaceFilters = TStaticViewTypes;
 
 export type TBaseFilterStore = IBaseIssueFilterStore & IIssueFilterHelperStore;
+
+const LEGACY_TO_RICH_FILTER_FIELD_MAP: Partial<Record<keyof IIssueFilterOptions, TWorkItemFilterProperty>> = {
+  assignees: "assignee_id",
+  cycle: "cycle_id",
+  created_by: "created_by_id",
+  labels: "label_id",
+  mentions: "mention_id",
+  module: "module_id",
+  priority: "priority",
+  state: "state_id",
+  state_group: "state_group",
+  subscriber: "subscriber_id",
+  project: "project_id",
+};
+
+const getLegacyFilterValues = (value: string[] | string | null | undefined): string[] => {
+  const values = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+
+  return values.filter((item) => item && item !== "null" && item !== "None");
+};
+
+const getRichFiltersFromLegacyFilters = (legacyFilters?: IIssueFilterOptions): TWorkItemFilterExpression => {
+  if (isEmpty(legacyFilters)) return {};
+
+  const filterConditions = Object.entries(LEGACY_TO_RICH_FILTER_FIELD_MAP).reduce<TWorkItemFilterExpression[]>(
+    (conditions, [legacyKey, richKey]) => {
+      if (!richKey) return conditions;
+
+      const values = getLegacyFilterValues(legacyFilters?.[legacyKey as keyof IIssueFilterOptions]);
+      if (values.length === 0) return conditions;
+
+      conditions.push({ [`${richKey}__in`]: values } as TWorkItemFilterExpression);
+      return conditions;
+    },
+    []
+  );
+
+  if (filterConditions.length === 0) return {};
+  if (filterConditions.length === 1) return filterConditions[0];
+
+  return {
+    [LOGICAL_OPERATOR.AND]: filterConditions,
+  } as TWorkItemFilterExpression;
+};
+
+export const getWorkspaceViewRichFilters = (view: IWorkspaceView | null | undefined): TWorkItemFilterExpression => {
+  if (!view) return {};
+  if (!isEmpty(view.rich_filters)) return view.rich_filters;
+
+  return getRichFiltersFromLegacyFilters(view.filters);
+};
 
 export interface IWorkspaceIssuesFilter extends TBaseFilterStore {
   // fetch action
@@ -158,26 +212,26 @@ export class WorkspaceIssuesFilter extends IssueFilterHelperStore implements IWo
       sub_group_by: [],
     };
 
-    const _filters = this.handleIssuesLocalFilters.get(EIssuesStoreType.GLOBAL, workspaceSlug, undefined, viewId);
-    displayFilters = this.computedDisplayFilters(_filters?.display_filters, {
+    const localFilters = this.handleIssuesLocalFilters.get(EIssuesStoreType.GLOBAL, workspaceSlug, undefined, viewId);
+    displayFilters = this.computedDisplayFilters(localFilters?.display_filters, {
       layout: EIssueLayoutTypes.SPREADSHEET,
       order_by: "-created_at",
     });
-    displayProperties = this.computedDisplayProperties(_filters?.display_properties);
+    displayProperties = this.computedDisplayProperties(localFilters?.display_properties);
     kanbanFilters = {
-      group_by: _filters?.kanban_filters?.group_by || [],
-      sub_group_by: _filters?.kanban_filters?.sub_group_by || [],
+      group_by: localFilters?.kanban_filters?.group_by || [],
+      sub_group_by: localFilters?.kanban_filters?.sub_group_by || [],
     };
 
     // Get the view details if the view is not a static view
     if (STATIC_VIEW_TYPES.includes(viewId) === false) {
-      const _filters = await this.issueFilterService.getViewDetails(workspaceSlug, viewId);
-      richFilters = _filters?.rich_filters;
-      displayFilters = this.computedDisplayFilters(_filters?.display_filters, {
+      const viewFilters = await this.issueFilterService.getViewDetails(workspaceSlug, viewId);
+      richFilters = getWorkspaceViewRichFilters(viewFilters);
+      displayFilters = this.computedDisplayFilters(viewFilters?.display_filters, {
         layout: EIssueLayoutTypes.SPREADSHEET,
         order_by: "-created_at",
       });
-      displayProperties = this.computedDisplayProperties(_filters?.display_properties);
+      displayProperties = this.computedDisplayProperties(viewFilters?.display_properties);
     }
 
     // override existing order by if ordered by manual sort_order

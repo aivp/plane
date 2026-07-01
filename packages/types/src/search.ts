@@ -76,6 +76,7 @@ export type TSearchResponse = {
 
 export type TSearchEntityRequestPayload = {
   count: number;
+  include_all_user_mentions?: boolean;
   project_id?: string;
   query_type: TSearchEntities[];
   query: string;

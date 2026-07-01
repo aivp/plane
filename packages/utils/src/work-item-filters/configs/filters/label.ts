@@ -17,6 +17,7 @@ import { createFilterConfig, getMultiSelectConfig, createOperatorConfigEntry } f
 export type TCreateLabelFilterParams = TCreateFilterConfigParams &
   IFilterIconConfig<string> & {
     labels: IIssueLabel[];
+    getGroupLabel?: (label: IIssueLabel) => string | undefined;
   };
 
 /**
@@ -31,6 +32,7 @@ export const getLabelMultiSelectConfig = (params: TCreateLabelFilterParams, sing
       getId: (label) => label.id,
       getLabel: (label) => label.name,
       getValue: (label) => label.id,
+      getGroupLabel: params.getGroupLabel,
       getIconData: (label) => label.color,
     },
     {

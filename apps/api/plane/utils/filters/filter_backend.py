@@ -260,10 +260,10 @@ class ComplexFilterBackend(filters.BaseFilterBackend):
         # Build a QueryDict from the leaf conditions
         qd = QueryDict(mutable=True)
         for key, value in processed_conditions.items():
-            # Default serialization to string; QueryDict expects strings
+            # Default serialization to string; django-filter CSV filters expect a
+            # single comma-separated query value for list-based operators.
             if isinstance(value, list):
-                # Repeat key for list values (e.g., __in)
-                qd.setlist(key, [str(v) for v in value])
+                qd[key] = ",".join(str(v) for v in value)
             else:
                 qd[key] = "" if value is None else str(value)
 

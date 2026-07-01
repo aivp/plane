@@ -6,6 +6,7 @@
 
 import type {
   IWorkspaceViewProps,
+  IIssueFilterOptions,
   IIssueDisplayFilterOptions,
   IIssueDisplayProperties,
   TWorkItemFilterExpression,
@@ -23,6 +24,7 @@ export interface IWorkspaceView {
   name: string;
   description: string;
   rich_filters: TWorkItemFilterExpression;
+  filters?: IIssueFilterOptions;
   display_filters: IIssueDisplayFilterOptions;
   display_properties: IIssueDisplayProperties;
   query: any;
