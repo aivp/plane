@@ -8,6 +8,7 @@ import { useRef } from "react";
 //types
 import { observer } from "mobx-react";
 import type { IIssueDisplayFilterOptions, IIssueDisplayProperties } from "@plane/types";
+import { cn } from "@plane/utils";
 //components
 import { shouldRenderColumn } from "@/helpers/issue-filter.helper";
 import { WithDisplayPropertiesHOC } from "../properties/with-display-properties-HOC";
@@ -36,7 +37,10 @@ export const SpreadsheetHeaderColumn = observer(function SpreadsheetHeaderColumn
       shouldRenderProperty={() => shouldRenderProperty}
     >
       <th
-        className="h-11 min-w-36 items-center border border-t-0 border-b-0 border-subtle bg-layer-1 py-1 text-13 font-medium"
+        className={cn(
+          "h-11 items-center border border-t-0 border-b-0 border-subtle bg-layer-1 py-1 text-13 font-medium",
+          property === "labels" ? "w-80 min-w-80" : "min-w-36"
+        )}
         ref={tableHeaderCellRef}
         tabIndex={0}
       >
