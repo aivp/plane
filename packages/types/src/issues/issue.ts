@@ -48,7 +48,7 @@ export type TIssueAgentTaskStatus = "pending" | "running" | "completed" | "faile
 export type TIssueAgentTaskLite = {
   id: string;
   status: TIssueAgentTaskStatus;
-  repository: Pick<TGithubManagedRepository, "id" | "full_name" | "html_url">;
+  repository: Pick<TGithubManagedRepository, "id" | "full_name" | "html_url"> | null;
   base_branch: string;
   work_branch: string | null;
   pr_url: string | null;

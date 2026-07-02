@@ -20,10 +20,11 @@ export function IssueAgentTaskBadge({ task, compact = false }: { task: TIssueAge
   const meta = STATUS_META[task.status];
   const Icon = meta.icon;
   const detail = task.pr_url ?? task.last_error ?? task.work_branch;
+  const repositoryName = task.repository?.full_name ?? "未配置仓库";
 
   return (
     <span
-      title={[meta.label, task.repository.full_name, task.base_branch, detail].filter(Boolean).join(" · ")}
+      title={[meta.label, repositoryName, task.base_branch, detail].filter(Boolean).join(" · ")}
       className={`inline-flex h-5 max-w-full items-center gap-1 rounded border border-subtle bg-surface-1 px-1.5 text-caption ${meta.className}`}
     >
       <Icon className={`size-3 shrink-0 ${task.status === "running" ? "animate-spin" : ""}`} />

@@ -66,13 +66,14 @@ export function IssueAgentTaskProperty(props: Props) {
   const isReadOnly = disabled || task?.status === "running" || task?.status === "completed";
   const canSubmit = Boolean(repositoryId && baseBranch && !isReadOnly);
   const canResetCompleted = Boolean(task?.status === "completed" && !disabled && (isWorkspaceAdmin || isProjectAdmin));
+  const taskRepositoryId = task?.repository?.id ?? "";
 
   useEffect(() => {
     if (task) {
-      setRepositoryId(task.repository.id);
+      setRepositoryId(task.repository?.id ?? "");
       setBaseBranch(task.base_branch);
     }
-  }, [task?.id, task?.repository.id, task?.base_branch]);
+  }, [task?.id, task?.repository?.id, task?.base_branch]);
 
   useEffect(() => {
     if (!task && !repositoryId && repositories[0]) setRepositoryId(repositories[0].id);
@@ -114,11 +115,17 @@ export function IssueAgentTaskProperty(props: Props) {
 
   const retryTask = async () => {
     if (!task) return;
+    const nextRepositoryId = repositoryId || taskRepositoryId;
+    const nextBaseBranch = baseBranch || task.base_branch;
+    if (!nextRepositoryId || !nextBaseBranch) {
+      showError("请先选择仓库和分支。");
+      return;
+    }
     setLoadingAction("retry");
     try {
       await issueAgentTaskService.update(workspaceSlug, projectId, issueId, {
-        repository_id: repositoryId || task.repository.id,
-        base_branch: baseBranch || task.base_branch,
+        repository_id: nextRepositoryId,
+        base_branch: nextBaseBranch,
         status: "pending",
       });
       await refreshTask();
@@ -131,10 +138,14 @@ export function IssueAgentTaskProperty(props: Props) {
 
   const resetCompletedTask = async () => {
     if (!task) return;
+    if (!taskRepositoryId || !task.base_branch) {
+      showError("当前任务缺少仓库或分支，不能重置。");
+      return;
+    }
     setLoadingAction("reset");
     try {
       await issueAgentTaskService.update(workspaceSlug, projectId, issueId, {
-        repository_id: task.repository.id,
+        repository_id: taskRepositoryId,
         base_branch: task.base_branch,
         status: "pending",
       });
