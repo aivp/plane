@@ -40,6 +40,11 @@ from plane.app.views import (
     WorkspaceLarkImportEndpoint,
     WorkspaceLarkSyncEndpoint,
     WorkspaceLarkSyncRunsEndpoint,
+    WorkspaceGithubCredentialEndpoint,
+    WorkspaceGithubCredentialVerifyEndpoint,
+    WorkspaceGithubRepositoryBranchesEndpoint,
+    WorkspaceGithubRepositoryEndpoint,
+    WorkspaceGithubRepositorySyncBranchesEndpoint,
 )
 
 
@@ -127,6 +132,41 @@ urlpatterns = [
         "workspaces/<str:slug>/lark/import/",
         WorkspaceLarkImportEndpoint.as_view(),
         name="workspace-lark-import",
+    ),
+    path(
+        "workspaces/<str:slug>/github/credentials/",
+        WorkspaceGithubCredentialEndpoint.as_view(),
+        name="workspace-github-credentials",
+    ),
+    path(
+        "workspaces/<str:slug>/github/credentials/<uuid:credential_id>/",
+        WorkspaceGithubCredentialEndpoint.as_view(),
+        name="workspace-github-credential",
+    ),
+    path(
+        "workspaces/<str:slug>/github/credentials/<uuid:credential_id>/verify/",
+        WorkspaceGithubCredentialVerifyEndpoint.as_view(),
+        name="workspace-github-credential-verify",
+    ),
+    path(
+        "workspaces/<str:slug>/github/repositories/",
+        WorkspaceGithubRepositoryEndpoint.as_view(),
+        name="workspace-github-repositories",
+    ),
+    path(
+        "workspaces/<str:slug>/github/repositories/<uuid:repository_id>/",
+        WorkspaceGithubRepositoryEndpoint.as_view(),
+        name="workspace-github-repository",
+    ),
+    path(
+        "workspaces/<str:slug>/github/repositories/<uuid:repository_id>/sync-branches/",
+        WorkspaceGithubRepositorySyncBranchesEndpoint.as_view(),
+        name="workspace-github-repository-sync-branches",
+    ),
+    path(
+        "workspaces/<str:slug>/github/repositories/<uuid:repository_id>/branches/",
+        WorkspaceGithubRepositoryBranchesEndpoint.as_view(),
+        name="workspace-github-repository-branches",
     ),
     path(
         "users/last-visited-workspace/",

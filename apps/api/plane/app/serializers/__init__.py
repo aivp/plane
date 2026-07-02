@@ -128,6 +128,14 @@ from .webhook import WebhookSerializer, WebhookLogSerializer
 
 from .favorite import UserFavoriteSerializer
 
+from .github import (
+    GithubCredentialProfileSerializer,
+    GithubManagedRepositorySerializer,
+    GithubRepositoryBranchSerializer,
+    IssueAgentTaskLiteSerializer,
+    IssueAgentTaskSerializer,
+)
+
 from .draft import (
     DraftIssueCreateSerializer,
     DraftIssueSerializer,

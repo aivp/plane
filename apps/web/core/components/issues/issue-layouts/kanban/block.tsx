@@ -23,6 +23,7 @@ import { ControlLink, DropIndicator } from "@plane/ui";
 import { cn, generateWorkItemLink } from "@plane/utils";
 // components
 import RenderIfVisible from "@/components/core/render-if-visible-HOC";
+import { IssueAgentTaskBadge } from "@/components/issues/issue-detail/agent-badge";
 import { HIGHLIGHT_CLASS, getIssueBlockId } from "@/components/issues/issue-layouts/utils";
 // helpers
 // hooks
@@ -125,8 +126,9 @@ const KanbanIssueDetailsBlock = observer(function KanbanIssueDetailsBlock(props:
       </div>
 
       <Tooltip tooltipContent={issue.name} isMobile={isMobile} renderByDefault={false}>
-        <div className="line-clamp-1 w-full text-body-sm-medium text-primary">
-          <span>{issue.name}</span>
+        <div className="flex w-full min-w-0 items-center gap-1 text-body-sm-medium text-primary">
+          <span className="line-clamp-1 min-w-0 grow">{issue.name}</span>
+          {issue.agent_task && <IssueAgentTaskBadge task={issue.agent_task} compact />}
         </div>
       </Tooltip>
 

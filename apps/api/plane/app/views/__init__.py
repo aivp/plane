@@ -66,6 +66,13 @@ from .workspace.lark import (
     WorkspaceLarkSyncEndpoint,
     WorkspaceLarkSyncRunsEndpoint,
 )
+from .workspace.github import (
+    WorkspaceGithubCredentialEndpoint,
+    WorkspaceGithubCredentialVerifyEndpoint,
+    WorkspaceGithubRepositoryBranchesEndpoint,
+    WorkspaceGithubRepositoryEndpoint,
+    WorkspaceGithubRepositorySyncBranchesEndpoint,
+)
 from .workspace.invite import (
     WorkspaceInvitationsViewset,
     WorkspaceJoinEndpoint,
@@ -159,6 +166,8 @@ from .issue.sub_issue import SubIssuesEndpoint
 from .issue.subscriber import IssueSubscriberViewSet
 
 from .issue.version import IssueVersionEndpoint, WorkItemDescriptionVersionEndpoint
+
+from .issue.agent import IssueAgentTaskEndpoint
 
 from .module.base import (
     ModuleViewSet,

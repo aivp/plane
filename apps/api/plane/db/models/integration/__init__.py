@@ -4,7 +4,10 @@
 
 from .base import Integration, WorkspaceIntegration
 from .github import (
+    GithubCredentialProfile,
     GithubRepository,
+    GithubManagedRepository,
+    GithubRepositoryBranch,
     GithubRepositorySync,
     GithubIssueSync,
     GithubCommentSync,

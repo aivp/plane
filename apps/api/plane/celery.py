@@ -59,6 +59,10 @@ app.conf.beat_schedule = {
         "task": "plane.bgtasks.lark_task.lark_process_events",
         "schedule": crontab(minute="*/1"),
     },
+    "sync-github-repository-branches": {
+        "task": "plane.bgtasks.github_task.github_sync_all_repository_branches",
+        "schedule": crontab(minute="*/30"),
+    },
     # Occurs once every day
     "check-every-day-to-delete-hard-delete": {
         "task": "plane.bgtasks.deletion_task.hard_delete",

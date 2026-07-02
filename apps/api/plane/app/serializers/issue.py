@@ -47,6 +47,7 @@ from plane.utils.content_validator import (
     validate_html_content,
     validate_binary_data,
 )
+from plane.utils.agent_task import agent_task_payload
 
 
 class IssueFlatSerializer(BaseSerializer):
@@ -771,6 +772,7 @@ class IssueSerializer(DynamicBaseSerializer):
     sub_issues_count = serializers.IntegerField(read_only=True)
     attachment_count = serializers.IntegerField(read_only=True)
     link_count = serializers.IntegerField(read_only=True)
+    agent_task = serializers.SerializerMethodField()
 
     class Meta:
         model = Issue
@@ -800,8 +802,12 @@ class IssueSerializer(DynamicBaseSerializer):
             "link_count",
             "is_draft",
             "archived_at",
+            "agent_task",
         ]
         read_only_fields = fields
+
+    def get_agent_task(self, obj):
+        return agent_task_payload(getattr(obj, "agent_task", None))
 
     def validate(self, data):
         if (
@@ -858,6 +864,7 @@ class IssueListDetailSerializer(serializers.Serializer):
             "sub_issues_count": instance.sub_issues_count,
             "attachment_count": instance.attachment_count,
             "link_count": instance.link_count,
+            "agent_task": agent_task_payload(getattr(instance, "agent_task", None)),
         }
 
         # Handle expanded fields only when requested - using direct field access

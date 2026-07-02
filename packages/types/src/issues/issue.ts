@@ -5,6 +5,7 @@
  */
 
 import type { TIssuePriorities } from "../issues";
+import type { TGithubManagedRepository } from "../integration";
 import type { TStateGroups } from "../state";
 import type { TIssuePublicComment } from "./activity/issue_comment";
 import type { TIssueAttachment } from "./issue_attachment";
@@ -42,6 +43,27 @@ export enum EIssuesStoreType {
   TEAM_PROJECT_WORK_ITEMS = "TEAM_PROJECT_WORK_ITEMS",
 }
 
+export type TIssueAgentTaskStatus = "pending" | "running" | "completed" | "failed" | "cancelled";
+
+export type TIssueAgentTaskLite = {
+  id: string;
+  status: TIssueAgentTaskStatus;
+  repository: Pick<TGithubManagedRepository, "id" | "full_name" | "html_url">;
+  base_branch: string;
+  work_branch: string | null;
+  pr_url: string | null;
+  last_error: string | null;
+};
+
+export type TIssueAgentTask = TIssueAgentTaskLite & {
+  claimed_by: string | null;
+  claimed_at: string | null;
+  completed_at: string | null;
+  retry_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type TBaseIssue = {
   id: string;
   sequence_id: number;
@@ -77,6 +99,7 @@ export type TBaseIssue = {
   is_draft: boolean;
   is_epic?: boolean;
   is_intake?: boolean;
+  agent_task?: TIssueAgentTaskLite | null;
 };
 
 type IssueRelation = {

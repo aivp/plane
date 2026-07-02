@@ -22,6 +22,7 @@ from plane.db.models import (
     ModuleIssue,
     IssueLabel,
 )
+from plane.utils.agent_task import append_agent_task_payload
 from typing import Optional, Dict, Tuple, Any, Union, List
 
 
@@ -138,7 +139,7 @@ def issue_on_results(
         original_list.append(sub_group_by)
 
     required_fields.extend(original_list)
-    return list(issues.values(*required_fields))
+    return append_agent_task_payload(list(issues.values(*required_fields)))
 
 
 def issue_group_values(

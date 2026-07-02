@@ -21,6 +21,7 @@ import { Spinner, ControlLink, Row } from "@plane/ui";
 import { cn, generateWorkItemLink } from "@plane/utils";
 // components
 import { MultipleSelectEntityAction } from "@/components/core/multiple-select";
+import { IssueAgentTaskBadge } from "@/components/issues/issue-detail/agent-badge";
 import { IssueProperties } from "@/components/issues/issue-layouts/properties";
 // helpers
 // hooks
@@ -284,6 +285,7 @@ export const IssueBlock = observer(function IssueBlock(props: IssueBlockProps) {
             >
               <p className="cursor-pointer truncate text-body-xs-medium text-primary">{issue.name}</p>
             </Tooltip>
+            {issue.agent_task && <IssueAgentTaskBadge task={issue.agent_task} />}
             {isEpic && displayProperties && (
               <WithDisplayPropertiesHOC
                 displayProperties={displayProperties}

@@ -70,6 +70,7 @@ from plane.utils.grouper import (
 )
 from plane.utils.host import base_host
 from plane.utils.issue_filters import issue_filters
+from plane.utils.agent_task import append_agent_task_payload
 from plane.utils.order_queryset import order_issue_queryset
 from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPaginator
 from plane.utils.timezone_converter import user_timezone_converter
@@ -103,9 +104,9 @@ class IssueListEndpoint(BaseAPIView):
 
         # Add select_related, prefetch_related if fields or expand is not None
         if self.fields or self.expand:
-            issue_queryset = issue_queryset.select_related("workspace", "project", "state", "parent").prefetch_related(
-                "assignees", "labels", "issue_module__module"
-            )
+            issue_queryset = issue_queryset.select_related(
+                "workspace", "project", "state", "parent", "agent_task__repository"
+            ).prefetch_related("assignees", "labels", "issue_module__module")
 
         # Add annotations
         issue_queryset = (
@@ -160,33 +161,37 @@ class IssueListEndpoint(BaseAPIView):
         if self.fields or self.expand:
             issues = IssueSerializer(issue_queryset, many=True, fields=self.fields, expand=self.expand).data
         else:
-            issues = issue_queryset.values(
-                "id",
-                "name",
-                "state_id",
-                "sort_order",
-                "completed_at",
-                "estimate_point",
-                "priority",
-                "start_date",
-                "target_date",
-                "sequence_id",
-                "project_id",
-                "parent_id",
-                "cycle_id",
-                "module_ids",
-                "label_ids",
-                "assignee_ids",
-                "sub_issues_count",
-                "created_at",
-                "updated_at",
-                "created_by",
-                "updated_by",
-                "attachment_count",
-                "link_count",
-                "is_draft",
-                "archived_at",
-                "deleted_at",
+            issues = append_agent_task_payload(
+                list(
+                    issue_queryset.values(
+                        "id",
+                        "name",
+                        "state_id",
+                        "sort_order",
+                        "completed_at",
+                        "estimate_point",
+                        "priority",
+                        "start_date",
+                        "target_date",
+                        "sequence_id",
+                        "project_id",
+                        "parent_id",
+                        "cycle_id",
+                        "module_ids",
+                        "label_ids",
+                        "assignee_ids",
+                        "sub_issues_count",
+                        "created_at",
+                        "updated_at",
+                        "created_by",
+                        "updated_by",
+                        "attachment_count",
+                        "link_count",
+                        "is_draft",
+                        "archived_at",
+                        "deleted_at",
+                    )
+                )
             )
             datetime_fields = ["created_at", "updated_at"]
             issues = user_timezone_converter(issues, datetime_fields, request.user.user_timezone)
@@ -455,6 +460,7 @@ class IssueViewSet(BaseViewSet):
                 )
                 .first()
             )
+            issue = append_agent_task_payload([issue])[0]
             datetime_fields = ["created_at", "updated_at"]
             issue = user_timezone_converter(issue, datetime_fields, request.user.user_timezone)
             # Send the model activity
@@ -487,7 +493,7 @@ class IssueViewSet(BaseViewSet):
                 workspace__slug=self.kwargs.get("slug"),
                 pk=pk,
             )
-            .select_related("state")
+            .select_related("state", "agent_task__repository")
             .annotate(cycle_id=Subquery(CycleIssue.objects.filter(issue=OuterRef("id")).values("cycle_id")[:1]))
             .annotate(
                 link_count=Subquery(
@@ -809,7 +815,7 @@ class IssuePaginatedViewSet(BaseViewSet):
         issue_queryset = Issue.issue_objects.filter(workspace__slug=workspace_slug, project_id=project_id)
 
         return (
-            issue_queryset.select_related("state")
+            issue_queryset.select_related("state", "agent_task__repository")
             .annotate(cycle_id=Subquery(CycleIssue.objects.filter(issue=OuterRef("id")).values("cycle_id")[:1]))
             .annotate(
                 link_count=Subquery(
@@ -841,7 +847,7 @@ class IssuePaginatedViewSet(BaseViewSet):
         )
 
     def process_paginated_result(self, fields, results, timezone):
-        paginated_data = results.values(*fields)
+        paginated_data = append_agent_task_payload(list(results.values(*fields)))
 
         # converting the datetime fields in paginated data
         datetime_fields = ["created_at", "updated_at"]
@@ -1221,7 +1227,7 @@ class IssueDetailIdentifierEndpoint(BaseAPIView):
         issue = (
             Issue.objects.filter(project_id=project.id)
             .filter(workspace__slug=slug)
-            .select_related("workspace", "project", "state", "parent")
+            .select_related("workspace", "project", "state", "parent", "agent_task__repository")
             .prefetch_related("assignees", "labels", "issue_module__module")
             .annotate(cycle_id=Subquery(CycleIssue.objects.filter(issue=OuterRef("id")).values("cycle_id")[:1]))
             .annotate(

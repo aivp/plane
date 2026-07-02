@@ -21,6 +21,7 @@ from plane.utils.path_validator import sanitize_filename
 from plane.db.mixins import SoftDeletionManager, ChangeTrackerMixin
 from plane.utils.exception_logger import log_exception
 from .project import ProjectBaseModel
+from .base import BaseModel
 from plane.utils.uuid import convert_uuid_to_integer
 from .description import Description
 from .state import StateGroup
@@ -253,6 +254,53 @@ class Issue(ChangeTrackerMixin, ProjectBaseModel):
         if update_fields is not None:
             kwargs["update_fields"] = list(set(update_fields) | {"completed_at"})
         return kwargs
+
+
+class IssueAgentTask(BaseModel):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    issue = models.OneToOneField("db.Issue", related_name="agent_task", on_delete=models.CASCADE)
+    project = models.ForeignKey("db.Project", related_name="issue_agent_tasks", on_delete=models.CASCADE)
+    workspace = models.ForeignKey("db.Workspace", related_name="issue_agent_tasks", on_delete=models.CASCADE)
+    repository = models.ForeignKey(
+        "db.GithubManagedRepository",
+        related_name="issue_agent_tasks",
+        on_delete=models.PROTECT,
+    )
+    base_branch = models.CharField(max_length=255)
+    work_branch = models.CharField(max_length=255, null=True, blank=True)
+    status = models.CharField(max_length=32, choices=Status.choices, default=Status.PENDING)
+    pr_url = models.URLField(null=True, blank=True)
+    last_error = models.TextField(null=True, blank=True)
+    claimed_by = models.CharField(max_length=255, null=True, blank=True)
+    claimed_at = models.DateTimeField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    retry_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Issue Agent Task"
+        verbose_name_plural = "Issue Agent Tasks"
+        db_table = "issue_agent_tasks"
+        ordering = ("-created_at",)
+        indexes = [
+            models.Index(fields=["workspace", "status"], name="iat_workspace_status_idx"),
+            models.Index(fields=["project", "status"], name="iat_project_status_idx"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.issue_id:
+            self.project_id = self.issue.project_id
+            self.workspace_id = self.issue.workspace_id
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.issue_id} <{self.status}>"
 
 
 class IssueBlocker(ProjectBaseModel):

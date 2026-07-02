@@ -115,6 +115,14 @@ export const APP_INTEGRATIONS = "APP_INTEGRATIONS";
 export const WORKSPACE_INTEGRATIONS = (workspaceSlug: string) =>
   `WORKSPACE_INTEGRATIONS_${workspaceSlug.toUpperCase()}`;
 
+export const GITHUB_CREDENTIALS = (workspaceSlug: string) =>
+  `GITHUB_CREDENTIALS_${workspaceSlug.toUpperCase()}`;
+export const GITHUB_MANAGED_REPOSITORIES = (workspaceSlug: string) =>
+  `GITHUB_MANAGED_REPOSITORIES_${workspaceSlug.toUpperCase()}`;
+export const GITHUB_REPOSITORY_BRANCHES = (workspaceSlug: string, repositoryId: string) =>
+  `GITHUB_REPOSITORY_BRANCHES_${workspaceSlug.toUpperCase()}_${repositoryId.toUpperCase()}`;
+export const ISSUE_AGENT_TASK = (issueId: string) => `ISSUE_AGENT_TASK_${issueId.toUpperCase()}`;
+
 export const JIRA_IMPORTER_DETAIL = (workspaceSlug: string, params: IJiraMetadata) => {
   const { api_token, cloud_hostname, email, project_key } = params;
 

@@ -79,3 +79,46 @@ export interface ISlackIntegrationData {
   };
   is_enterprise_install: boolean;
 }
+
+export type TGithubCredentialStatus = "active" | "invalid";
+export type TGithubRepositorySource = "github_app" | "manual";
+export type TGithubRepositoryVisibility = "public" | "private" | "internal" | "unknown";
+export type TGithubRepositorySyncStatus = "pending" | "syncing" | "synced" | "failed";
+
+export type TGithubCredentialProfile = {
+  id: string;
+  name: string;
+  provider: "github";
+  token_last_four: string;
+  status: TGithubCredentialStatus;
+  last_verified_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TGithubManagedRepository = {
+  id: string;
+  source: TGithubRepositorySource;
+  owner: string;
+  name: string;
+  full_name: string;
+  html_url: string | null;
+  default_branch: string;
+  visibility: TGithubRepositoryVisibility;
+  sync_status: TGithubRepositorySyncStatus;
+  last_synced_at: string | null;
+  last_sync_error: string | null;
+  branch_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TGithubRepositoryBranch = {
+  id: string;
+  name: string;
+  sha: string;
+  protected: boolean;
+  is_default: boolean;
+  last_seen_at: string | null;
+};

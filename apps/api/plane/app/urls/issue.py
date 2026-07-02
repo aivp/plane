@@ -31,6 +31,7 @@ from plane.app.views import (
     WorkItemDescriptionVersionEndpoint,
     IssueMetaEndpoint,
     IssueDetailIdentifierEndpoint,
+    IssueAgentTaskEndpoint,
 )
 
 urlpatterns = [
@@ -67,6 +68,11 @@ urlpatterns = [
             }
         ),
         name="project-issue",
+    ),
+    path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/agent-task/",
+        IssueAgentTaskEndpoint.as_view(),
+        name="project-issue-agent-task",
     ),
     path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/issue-labels/",

@@ -21,8 +21,11 @@ from .importer import Importer
 from .intake import Intake, IntakeIssue
 from .integration import (
     GithubCommentSync,
+    GithubCredentialProfile,
     GithubIssueSync,
+    GithubManagedRepository,
     GithubRepository,
+    GithubRepositoryBranch,
     GithubRepositorySync,
     Integration,
     SlackProjectSync,
@@ -38,6 +41,7 @@ from .issue import (
     IssueLabel,
     IssueLink,
     IssueMention,
+    IssueAgentTask,
     IssueReaction,
     IssueRelation,
     IssueSequence,
