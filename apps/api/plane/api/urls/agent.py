@@ -9,13 +9,13 @@ from plane.api.views import AgentTaskClaimAPIEndpoint, AgentTaskUpdateAPIEndpoin
 
 urlpatterns = [
     path(
-        "workspaces/<str:slug>/agent/tasks/claim/",
+        "workspaces/<str:slug>/agent/issues/claim/",
         AgentTaskClaimAPIEndpoint.as_view(http_method_names=["post"]),
-        name="agent-task-claim",
+        name="agent-issue-claim",
     ),
     path(
-        "workspaces/<str:slug>/agent/tasks/<uuid:task_id>/",
+        "workspaces/<str:slug>/agent/issues/<uuid:issue_id>/",
         AgentTaskUpdateAPIEndpoint.as_view(http_method_names=["patch"]),
-        name="agent-task-update",
+        name="agent-issue-update",
     ),
 ]

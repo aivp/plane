@@ -21,8 +21,8 @@ aidong
 完整 API 地址：
 
 ```http
-POST https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/claim/
-PATCH https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/{task_id}/
+POST https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/claim/
+PATCH https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/{issue_id}/
 ```
 
 ## 认证
@@ -63,10 +63,10 @@ cancelled  已取消，不会被 Agent 领取
 
 领取成功后，Plane 会立即把任务从 `pending` 更新为 `running`。
 
-## 领取任务
+## 领取 Issue
 
 ```http
-POST /api/v1/workspaces/{slug}/agent/tasks/claim/
+POST /api/v1/workspaces/{slug}/agent/issues/claim/
 ```
 
 请求：
@@ -89,15 +89,33 @@ POST /api/v1/workspaces/{slug}/agent/tasks/claim/
 {
   "results": [
     {
-      "task_id": "task-id",
       "issue": {
         "id": "issue-id",
         "project_id": "project-id",
         "sequence_id": 123,
         "name": "Fix login error",
         "description_html": "<p>...</p>",
-        "assignee_ids": ["user-id"]
+        "assignee_ids": ["user-id"],
+        "comments": [
+          {
+            "id": "comment-id",
+            "comment_html": "<p>需要同时检查筛选项。</p>",
+            "comment_stripped": "需要同时检查筛选项。",
+            "comment_json": {},
+            "attachments": [],
+            "access": "INTERNAL",
+            "actor": "user-id",
+            "actor_detail": {
+              "id": "user-id",
+              "display_name": "Owner"
+            },
+            "comment_reactions": [],
+            "created_at": "2026-07-02T10:00:00Z",
+            "updated_at": "2026-07-02T10:00:00Z"
+          }
+        ]
       },
+      "status": "running",
       "repository": {
         "id": "repository-id",
         "full_name": "aidong/plane",
@@ -110,7 +128,7 @@ POST /api/v1/workspaces/{slug}/agent/tasks/claim/
 }
 ```
 
-没有可领取任务时：
+没有可领取 issue 时：
 
 ```json
 {
@@ -120,24 +138,26 @@ POST /api/v1/workspaces/{slug}/agent/tasks/claim/
 
 领取规则：
 
-- 只领取 `status=pending` 的任务。
-- 只领取已配置 `repository` 和 `base_branch` 的任务。
-- 后端使用 `select_for_update(skip_locked=True)` 原子领取，避免多个 Agent 领取同一任务。
+- 只领取 Agent 状态为 `pending` 的 issue。
+- 只领取已配置 `repository` 和 `base_branch` 的 issue。
+- `issue.comments` 返回该 issue 的全部评论，按 `created_at` 升序排列，字段结构复用 Plane 的 `IssueCommentSerializer`。
+- 后端使用 `select_for_update(skip_locked=True)` 原子领取，避免多个 Agent 领取同一个 issue。
 - 领取时 Plane 会写入 `running`、`claimed_by`、`claimed_at`、`started_at`。
 - `work_branch` 由 Plane 生成，格式为 `ai/{project_identifier}-{sequence_id}-{slug}`。
 
-## 写回任务
+## 写回 Issue
 
 ```http
-PATCH /api/v1/workspaces/{slug}/agent/tasks/{task_id}/
+PATCH /api/v1/workspaces/{slug}/agent/issues/{issue_id}/
 ```
 
 写回要求：
 
-- 任务必须存在于当前 workspace。
-- 任务当前状态必须是 `running`。
+- `issue_id` 必须属于当前 workspace。
+- 该 issue 必须已经配置 AI Coding Agent 状态。
+- issue 当前 Agent 状态必须是 `running`。
 - 如果请求体携带 `agent_id`，必须与领取时的 `claimed_by` 一致。
-- 已完成任务不能再次写回。
+- 已完成 issue 不能再次通过 Agent API 写回。
 
 ### 写回完成
 
@@ -171,15 +191,33 @@ PATCH /api/v1/workspaces/{slug}/agent/tasks/{task_id}/
 
 ```json
 {
-  "task_id": "task-id",
   "issue": {
     "id": "issue-id",
     "project_id": "project-id",
     "sequence_id": 123,
     "name": "Fix login error",
     "description_html": "<p>...</p>",
-    "assignee_ids": ["user-id"]
+    "assignee_ids": ["user-id"],
+    "comments": [
+      {
+        "id": "comment-id",
+        "comment_html": "<p>需要同时检查筛选项。</p>",
+        "comment_stripped": "需要同时检查筛选项。",
+        "comment_json": {},
+        "attachments": [],
+        "access": "INTERNAL",
+        "actor": "user-id",
+        "actor_detail": {
+          "id": "user-id",
+          "display_name": "Owner"
+        },
+        "comment_reactions": [],
+        "created_at": "2026-07-02T10:00:00Z",
+        "updated_at": "2026-07-02T10:00:00Z"
+      }
+    ]
   },
+  "status": "completed",
   "repository": {
     "id": "repository-id",
     "full_name": "aidong/plane",
@@ -220,15 +258,15 @@ PATCH /api/v1/workspaces/{slug}/agent/tasks/{task_id}/
 - `400`：请求字段缺失、状态非法、`limit` 非数字、`pr_url` 不合法。
 - `401`：API Key 缺失或认证失败。
 - `403`：API Key 不允许访问当前 workspace。
-- `404`：任务不存在。
-- `409`：任务不是 `running`、任务已完成，或任务已被其他 Agent 领取。
+- `404`：issue 不存在，或该 issue 没有 AI Coding Agent 状态记录。
+- `409`：issue Agent 状态不是 `running`、已完成，或已被其他 Agent 领取。
 
 ## cURL 示例
 
 领取任务：
 
 ```bash
-curl -X POST "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/claim/" \
+curl -X POST "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/claim/" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: plane_api_xxx" \
   -d '{
@@ -240,7 +278,7 @@ curl -X POST "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/c
 写回 PR：
 
 ```bash
-curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/task-id/" \
+curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/issue-id/" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: plane_api_xxx" \
   -d '{
@@ -254,7 +292,7 @@ curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/
 写回失败：
 
 ```bash
-curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/task-id/" \
+curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/issue-id/" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: plane_api_xxx" \
   -d '{
@@ -267,7 +305,7 @@ curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/
 可用性测试：
 
 ```bash
-curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/00000000-0000-0000-0000-000000000000/" \
+curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/00000000-0000-0000-0000-000000000000/" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: plane_api_xxx" \
   -d '{
@@ -279,6 +317,6 @@ curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/
 
 预期结果：
 
-- `404 Task not found.`：认证、workspace 权限和路由正常，只是测试任务不存在。
+- `404 Issue agent state not found.`：认证、workspace 权限和路由正常，只是测试 issue 不存在或没有 AI Coding Agent 状态记录。
 - `403 Token is not allowed for this workspace.`：API Key 有效，但不允许访问 `aidong` workspace。服务 Token 需要绑定该 workspace；个人 Token 所属用户需要是该 workspace 活跃成员。
 - `403 Given API token is not valid`：API Key 无效、过期或已停用。

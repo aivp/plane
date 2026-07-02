@@ -8,22 +8,30 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Prefetch
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 
-from plane.app.serializers import IssueActivitySerializer
+from plane.app.serializers import IssueActivitySerializer, IssueCommentSerializer
 from plane.api.views.base import BaseAPIView
 from plane.bgtasks.notification_task import notifications
-from plane.db.models import APIToken, IssueActivity, IssueAgentTask, IssueSubscriber, WorkspaceMember
+from plane.db.models import APIToken, IssueActivity, IssueAgentTask, IssueComment, IssueSubscriber, WorkspaceMember
 from plane.utils.agent_task import make_agent_work_branch
+
+
+def _issue_comment_queryset():
+    return (
+        IssueComment.objects.select_related("actor", "issue", "project", "workspace")
+        .prefetch_related("comment_reactions__actor")
+        .order_by("created_at")
+    )
 
 
 def _task_response(task):
     issue = task.issue
     repository = task.repository
     return {
-        "task_id": task.id,
         "issue": {
             "id": issue.id,
             "project_id": issue.project_id,
@@ -31,7 +39,9 @@ def _task_response(task):
             "name": issue.name,
             "description_html": issue.description_html,
             "assignee_ids": list(issue.assignees.values_list("id", flat=True)),
+            "comments": IssueCommentSerializer(issue.issue_comments.all(), many=True).data,
         },
+        "status": task.status,
         "repository": {
             "id": repository.id,
             "full_name": repository.full_name,
@@ -142,6 +152,7 @@ class AgentTaskClaimAPIEndpoint(BaseAPIView):
                 )
                 .exclude(base_branch="")
                 .select_related("issue", "issue__project", "repository")
+                .prefetch_related(Prefetch("issue__issue_comments", queryset=_issue_comment_queryset()))
                 .order_by("created_at")[:limit]
             )
             for task in tasks:
@@ -171,28 +182,29 @@ class AgentTaskClaimAPIEndpoint(BaseAPIView):
 
 
 class AgentTaskUpdateAPIEndpoint(BaseAPIView):
-    def patch(self, request, slug, task_id):
+    def patch(self, request, slug, issue_id):
         api_token = _get_agent_api_token(request.auth, slug)
         if not api_token:
             return Response({"error": "Token is not allowed for this workspace."}, status=status.HTTP_403_FORBIDDEN)
 
         task = (
-            IssueAgentTask.objects.filter(workspace__slug=slug, pk=task_id)
+            IssueAgentTask.objects.filter(workspace__slug=slug, issue_id=issue_id)
             .select_related("issue", "issue__project", "project", "repository")
+            .prefetch_related(Prefetch("issue__issue_comments", queryset=_issue_comment_queryset()))
             .first()
         )
         if not task:
-            return Response({"error": "Task not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Issue agent state not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if task.status == IssueAgentTask.Status.COMPLETED:
-            return Response({"error": "Task is already completed."}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": "Issue agent state is already completed."}, status=status.HTTP_409_CONFLICT)
 
         if task.status != IssueAgentTask.Status.RUNNING:
-            return Response({"error": "Task is not running."}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": "Issue agent state is not running."}, status=status.HTTP_409_CONFLICT)
 
         agent_id = request.data.get("agent_id")
         if agent_id and task.claimed_by and agent_id != task.claimed_by:
-            return Response({"error": "Task is claimed by another agent."}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": "Issue is claimed by another agent."}, status=status.HTTP_409_CONFLICT)
 
         next_status = request.data.get("status")
         if next_status not in [IssueAgentTask.Status.COMPLETED, IssueAgentTask.Status.FAILED]:

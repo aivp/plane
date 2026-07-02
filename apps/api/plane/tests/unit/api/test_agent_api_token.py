@@ -3,10 +3,11 @@
 # See the LICENSE file for details.
 
 from uuid import uuid4
+from types import SimpleNamespace
 
 import pytest
 
-from plane.api.views.agent import _get_agent_api_token
+from plane.api.views.agent import _get_agent_api_token, _task_response
 from plane.db.models import APIToken, User, Workspace, WorkspaceMember
 
 
@@ -51,3 +52,33 @@ def test_agent_api_rejects_personal_token_for_non_member(create_user, agent_work
     )
 
     assert _get_agent_api_token(token.token, agent_workspace.slug) is None
+
+
+def test_agent_api_response_uses_issue_id_without_task_id():
+    task = SimpleNamespace(
+        id="agent-task-id",
+        status="running",
+        base_branch="main",
+        work_branch="ai/WEB-1-fix-login",
+        issue=SimpleNamespace(
+            id="issue-id",
+            project_id="project-id",
+            sequence_id=1,
+            name="Fix login",
+            description_html="<p>...</p>",
+            assignees=SimpleNamespace(values_list=lambda *args, **kwargs: ["user-id"]),
+            issue_comments=SimpleNamespace(all=lambda: []),
+        ),
+        repository=SimpleNamespace(
+            id="repository-id",
+            full_name="aidong/plane",
+            html_url="https://github.com/aidong/plane",
+        ),
+    )
+
+    response = _task_response(task)
+
+    assert "task_id" not in response
+    assert response["issue"]["id"] == "issue-id"
+    assert response["issue"]["comments"] == []
+    assert response["status"] == "running"
