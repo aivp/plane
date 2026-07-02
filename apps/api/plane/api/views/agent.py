@@ -28,6 +28,14 @@ def _issue_comment_queryset():
     )
 
 
+def _agent_issue_queryset(slug):
+    return (
+        IssueAgentTask.objects.filter(workspace__slug=slug)
+        .select_related("issue", "issue__project", "project", "repository")
+        .prefetch_related("issue__assignees", Prefetch("issue__issue_comments", queryset=_issue_comment_queryset()))
+    )
+
+
 def _task_response(task):
     issue = task.issue
     repository = task.repository
@@ -42,11 +50,15 @@ def _task_response(task):
             "comments": IssueCommentSerializer(issue.issue_comments.all(), many=True).data,
         },
         "status": task.status,
-        "repository": {
-            "id": repository.id,
-            "full_name": repository.full_name,
-            "html_url": repository.html_url,
-        },
+        "repository": (
+            {
+                "id": repository.id,
+                "full_name": repository.full_name,
+                "html_url": repository.html_url,
+            }
+            if repository
+            else None
+        ),
         "base_branch": task.base_branch,
         "work_branch": task.work_branch,
     }
@@ -124,8 +136,46 @@ def _notify_agent_task_update(api_token, task):
     )
 
 
-class AgentTaskClaimAPIEndpoint(BaseAPIView):
-    def post(self, request, slug):
+class AgentIssueListAPIEndpoint(BaseAPIView):
+    def get(self, request, slug):
+        api_token = _get_agent_api_token(request.auth, slug)
+        if not api_token:
+            return Response({"error": "Token is not allowed for this workspace."}, status=status.HTTP_403_FORBIDDEN)
+
+        agent_status = request.query_params.get("status", IssueAgentTask.Status.PENDING)
+        if agent_status not in IssueAgentTask.Status.values:
+            return Response({"error": "Invalid agent issue status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            limit = int(request.query_params.get("limit", 100) or 100)
+        except (TypeError, ValueError):
+            return Response({"error": "limit must be a number."}, status=status.HTTP_400_BAD_REQUEST)
+        limit = max(1, min(limit, 100))
+
+        tasks = _agent_issue_queryset(slug).filter(status=agent_status)
+
+        project_id = request.query_params.get("project_id")
+        if project_id:
+            tasks = tasks.filter(project_id=project_id)
+
+        repository_id = request.query_params.get("repository_id")
+        if repository_id:
+            tasks = tasks.filter(repository_id=repository_id)
+
+        base_branch = request.query_params.get("base_branch")
+        if base_branch:
+            tasks = tasks.filter(base_branch=base_branch)
+
+        ready = request.query_params.get("ready", "true").lower() != "false"
+        if ready:
+            tasks = tasks.filter(repository__isnull=False).exclude(base_branch="")
+
+        tasks = tasks.order_by("created_at")[:limit]
+        return Response({"results": [_task_response(task) for task in tasks]}, status=status.HTTP_200_OK)
+
+
+class AgentIssueClaimAPIEndpoint(BaseAPIView):
+    def post(self, request, slug, issue_id):
         api_token = _get_agent_api_token(request.auth, slug)
         if not api_token:
             return Response({"error": "Token is not allowed for this workspace."}, status=status.HTTP_403_FORBIDDEN)
@@ -134,51 +184,44 @@ class AgentTaskClaimAPIEndpoint(BaseAPIView):
         if not agent_id:
             return Response({"error": "agent_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            limit = int(request.data.get("limit", 1) or 1)
-        except (TypeError, ValueError):
-            return Response({"error": "limit must be a number."}, status=status.HTTP_400_BAD_REQUEST)
-        limit = max(1, min(limit, 10))
-        claimed_tasks = []
         now = timezone.now()
 
         with transaction.atomic():
-            tasks = (
-                IssueAgentTask.objects.select_for_update(skip_locked=True)
-                .filter(
-                    workspace__slug=slug,
-                    status=IssueAgentTask.Status.PENDING,
-                    repository__isnull=False,
-                )
-                .exclude(base_branch="")
-                .select_related("issue", "issue__project", "repository")
-                .prefetch_related(Prefetch("issue__issue_comments", queryset=_issue_comment_queryset()))
-                .order_by("created_at")[:limit]
-            )
-            for task in tasks:
-                if not task.work_branch:
-                    task.work_branch = make_agent_work_branch(
-                        task.issue.project.identifier,
-                        task.issue.sequence_id,
-                        task.issue.name,
-                    )
-                task.status = IssueAgentTask.Status.RUNNING
-                task.claimed_by = agent_id
-                task.claimed_at = now
-                task.started_at = now
-                task.save(
-                    update_fields=[
-                        "work_branch",
-                        "status",
-                        "claimed_by",
-                        "claimed_at",
-                        "started_at",
-                        "updated_at",
-                    ]
-                )
-                claimed_tasks.append(task)
+            task = _agent_issue_queryset(slug).select_for_update().filter(issue_id=issue_id).first()
+            if not task:
+                return Response({"error": "Issue agent state not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        return Response({"results": [_task_response(task) for task in claimed_tasks]}, status=status.HTTP_200_OK)
+            if task.status != IssueAgentTask.Status.PENDING:
+                return Response({"error": "Issue agent state is not pending."}, status=status.HTTP_409_CONFLICT)
+
+            if not task.repository_id or not task.base_branch:
+                return Response(
+                    {"error": "Issue agent state is missing repository or base_branch."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if not task.work_branch:
+                task.work_branch = make_agent_work_branch(
+                    task.issue.project.identifier,
+                    task.issue.sequence_id,
+                    task.issue.name,
+                )
+            task.status = IssueAgentTask.Status.RUNNING
+            task.claimed_by = agent_id
+            task.claimed_at = now
+            task.started_at = now
+            task.save(
+                update_fields=[
+                    "work_branch",
+                    "status",
+                    "claimed_by",
+                    "claimed_at",
+                    "started_at",
+                    "updated_at",
+                ]
+            )
+
+        return Response(_task_response(task), status=status.HTTP_200_OK)
 
 
 class AgentTaskUpdateAPIEndpoint(BaseAPIView):

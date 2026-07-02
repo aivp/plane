@@ -21,7 +21,8 @@ aidong
 完整 API 地址：
 
 ```http
-POST https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/claim/
+GET https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/
+POST https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/{issue_id}/claim/
 PATCH https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/{issue_id}/
 ```
 
@@ -61,27 +62,32 @@ failed     失败，Agent 已写回错误信息
 cancelled  已取消，不会被 Agent 领取
 ```
 
-领取成功后，Plane 会立即把任务从 `pending` 更新为 `running`。
+只读列表不会修改状态。只有领取单个 issue 成功后，Plane 才会把状态从 `pending` 更新为 `running`。
 
-## 领取 Issue
+## 获取匹配 Issue
 
 ```http
-POST /api/v1/workspaces/{slug}/agent/issues/claim/
+GET /api/v1/workspaces/{slug}/agent/issues/
 ```
 
-请求：
+用途：获取当前匹配的 AI Coding Agent issue 列表，不修改任何状态。
 
-```json
-{
-  "agent_id": "coding-agent-01",
-  "limit": 1
-}
+默认筛选：
+
+- Agent 状态为 `pending`。
+- 已配置 `repository`。
+- 已配置 `base_branch`。
+
+查询参数：
+
+```text
+status        可选，默认 pending。支持 pending/running/completed/failed/cancelled。
+project_id    可选，按项目过滤。
+repository_id 可选，按仓库过滤。
+base_branch   可选，按目标分支过滤。
+ready         可选，默认 true。为 false 时不强制要求 repository/base_branch 完整。
+limit         可选，默认 100，范围 1..100。
 ```
-
-字段说明：
-
-- `agent_id`：必填，调用方 Agent 实例标识。Plane 会写入 `claimed_by`。
-- `limit`：可选，默认 `1`，范围 `1..10`。
 
 响应：
 
@@ -115,20 +121,20 @@ POST /api/v1/workspaces/{slug}/agent/issues/claim/
           }
         ]
       },
-      "status": "running",
+      "status": "pending",
       "repository": {
         "id": "repository-id",
         "full_name": "aidong/plane",
         "html_url": "https://github.com/aidong/plane"
       },
       "base_branch": "main",
-      "work_branch": "ai/WEB-123-fix-login-error"
+      "work_branch": null
     }
   ]
 }
 ```
 
-没有可领取 issue 时：
+没有匹配 issue 时：
 
 ```json
 {
@@ -136,12 +142,80 @@ POST /api/v1/workspaces/{slug}/agent/issues/claim/
 }
 ```
 
+列表规则：
+
+- `GET` 只是候选快照，不做并发锁定，不保证返回后仍可领取。
+- Agent 应从列表中选择一个 `issue.id`，再调用单个 issue 的领取接口。
+- 如果领取时返回 `409`，说明该 issue 已被其他 Agent 领取或状态已变化，应跳过并选择下一个。
+- `issue.comments` 返回该 issue 的全部评论，按 `created_at` 升序排列，字段结构复用 Plane 的 `IssueCommentSerializer`。
+
+## 领取单个 Issue
+
+```http
+POST /api/v1/workspaces/{slug}/agent/issues/{issue_id}/claim/
+```
+
+用途：领取指定 issue。只有这个接口会修改状态。
+
+请求：
+
+```json
+{
+  "agent_id": "coding-agent-01"
+}
+```
+
+字段说明：
+
+- `agent_id`：必填，调用方 Agent 实例标识。Plane 会写入 `claimed_by`。
+
+响应：
+
+```json
+{
+  "issue": {
+    "id": "issue-id",
+    "project_id": "project-id",
+    "sequence_id": 123,
+    "name": "Fix login error",
+    "description_html": "<p>...</p>",
+    "assignee_ids": ["user-id"],
+    "comments": [
+      {
+        "id": "comment-id",
+        "comment_html": "<p>需要同时检查筛选项。</p>",
+        "comment_stripped": "需要同时检查筛选项。",
+        "comment_json": {},
+        "attachments": [],
+        "access": "INTERNAL",
+        "actor": "user-id",
+        "actor_detail": {
+          "id": "user-id",
+          "display_name": "Owner"
+        },
+        "comment_reactions": [],
+        "created_at": "2026-07-02T10:00:00Z",
+        "updated_at": "2026-07-02T10:00:00Z"
+      }
+    ]
+  },
+  "status": "running",
+  "repository": {
+    "id": "repository-id",
+    "full_name": "aidong/plane",
+    "html_url": "https://github.com/aidong/plane"
+  },
+  "base_branch": "main",
+  "work_branch": "ai/WEB-123-fix-login-error"
+}
+```
+
 领取规则：
 
-- 只领取 Agent 状态为 `pending` 的 issue。
-- 只领取已配置 `repository` 和 `base_branch` 的 issue。
+- 只允许领取 Agent 状态为 `pending` 的 issue。
+- 只允许领取已配置 `repository` 和 `base_branch` 的 issue。
 - `issue.comments` 返回该 issue 的全部评论，按 `created_at` 升序排列，字段结构复用 Plane 的 `IssueCommentSerializer`。
-- 后端使用 `select_for_update(skip_locked=True)` 原子领取，避免多个 Agent 领取同一个 issue。
+- 后端使用 `select_for_update` 原子领取，避免多个 Agent 领取同一个 issue。
 - 领取时 Plane 会写入 `running`、`claimed_by`、`claimed_at`、`started_at`。
 - `work_branch` 由 Plane 生成，格式为 `ai/{project_identifier}-{sequence_id}-{slug}`。
 
@@ -263,15 +337,21 @@ PATCH /api/v1/workspaces/{slug}/agent/issues/{issue_id}/
 
 ## cURL 示例
 
-领取任务：
+获取匹配 issue：
 
 ```bash
-curl -X POST "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/claim/" \
+curl -X GET "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/?status=pending&limit=100" \
+  -H "X-Api-Key: plane_api_xxx"
+```
+
+领取单个 issue：
+
+```bash
+curl -X POST "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/issues/issue-id/claim/" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: plane_api_xxx" \
   -d '{
-    "agent_id": "coding-agent-01",
-    "limit": 1
+    "agent_id": "coding-agent-01"
   }'
 ```
 

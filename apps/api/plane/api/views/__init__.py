@@ -64,4 +64,4 @@ from .invite import WorkspaceInvitationsViewset
 
 from .sticky import StickyViewSet
 
-from .agent import AgentTaskClaimAPIEndpoint, AgentTaskUpdateAPIEndpoint
+from .agent import AgentIssueClaimAPIEndpoint, AgentIssueListAPIEndpoint, AgentTaskUpdateAPIEndpoint

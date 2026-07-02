@@ -4,13 +4,18 @@
 
 from django.urls import path
 
-from plane.api.views import AgentTaskClaimAPIEndpoint, AgentTaskUpdateAPIEndpoint
+from plane.api.views import AgentIssueClaimAPIEndpoint, AgentIssueListAPIEndpoint, AgentTaskUpdateAPIEndpoint
 
 
 urlpatterns = [
     path(
-        "workspaces/<str:slug>/agent/issues/claim/",
-        AgentTaskClaimAPIEndpoint.as_view(http_method_names=["post"]),
+        "workspaces/<str:slug>/agent/issues/",
+        AgentIssueListAPIEndpoint.as_view(http_method_names=["get"]),
+        name="agent-issue-list",
+    ),
+    path(
+        "workspaces/<str:slug>/agent/issues/<uuid:issue_id>/claim/",
+        AgentIssueClaimAPIEndpoint.as_view(http_method_names=["post"]),
         name="agent-issue-claim",
     ),
     path(
