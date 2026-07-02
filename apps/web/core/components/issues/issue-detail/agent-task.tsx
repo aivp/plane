@@ -6,16 +6,12 @@
 
 import { useEffect, useState } from "react";
 import useSWR, { mutate } from "swr";
-import { Bot, Copy, ExternalLink, GitBranch, Github, RefreshCw } from "lucide-react";
+import { Bot, Copy, ExternalLink, GitBranch, Github, RefreshCw, XCircle } from "lucide-react";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssueAgentTaskStatus } from "@plane/types";
-import {
-  GITHUB_MANAGED_REPOSITORIES,
-  GITHUB_REPOSITORY_BRANCHES,
-  ISSUE_AGENT_TASK,
-} from "@/constants/fetch-keys";
+import { GITHUB_MANAGED_REPOSITORIES, GITHUB_REPOSITORY_BRANCHES, ISSUE_AGENT_TASK } from "@/constants/fetch-keys";
 import { GithubRepositoryService } from "@/services/integrations";
 import { IssueAgentTaskService } from "@/services/issue";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";
@@ -35,13 +31,15 @@ const issueAgentTaskService = new IssueAgentTaskService();
 const getErrorMessage = (error: any, fallback: string) =>
   error?.response?.data?.error ?? error?.data?.error ?? error?.message ?? fallback;
 
-const AGENT_TASK_STATUS_OPTIONS: { value: TIssueAgentTaskStatus; label: string }[] = [
-  { value: "pending", label: "等待中" },
-  { value: "running", label: "执行中" },
-  { value: "completed", label: "已完成" },
-  { value: "failed", label: "失败" },
-  { value: "cancelled", label: "已取消" },
-];
+const STATUS_LABELS: Record<TIssueAgentTaskStatus, string> = {
+  pending: "等待中",
+  running: "执行中",
+  completed: "已完成",
+  failed: "失败",
+  cancelled: "已取消",
+};
+
+const RERUN_STATUSES = new Set<TIssueAgentTaskStatus>(["completed", "failed", "cancelled"]);
 
 export function IssueAgentTaskProperty(props: Props) {
   const { workspaceSlug, projectId, issueId, disabled } = props;
@@ -62,14 +60,20 @@ export function IssueAgentTaskProperty(props: Props) {
   );
 
   const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE, workspaceSlug);
-  const isSaving = loadingAction === "save";
+  const isBusy = loadingAction !== null;
+  const isRunning = task?.status === "running";
+  const isPending = task?.status === "pending";
+  const canEditTarget = !disabled && !isRunning;
+  const canStart = !disabled && !isRunning && !isPending;
+  const isRerun = !!task?.status && RERUN_STATUSES.has(task.status);
+  const startButtonLabel = isRerun ? "让 AI 再次实现" : "让 AI 实现";
 
   useEffect(() => {
     if (task) {
       setRepositoryId(task.repository?.id ?? "");
       setBaseBranch(task.base_branch ?? "");
     }
-  }, [task?.id, task?.repository?.id, task?.base_branch]);
+  }, [task]);
 
   useEffect(() => {
     if (!task) {
@@ -87,18 +91,21 @@ export function IssueAgentTaskProperty(props: Props) {
 
   const refreshTask = () => mutate(ISSUE_AGENT_TASK(issueId));
 
-  const saveTask = async (next: {
-    status?: TIssueAgentTaskStatus;
-    repositoryId?: string;
-    baseBranch?: string;
-  }) => {
+  const saveTask = async (
+    next: {
+      status?: TIssueAgentTaskStatus;
+      repositoryId?: string;
+      baseBranch?: string;
+    },
+    successMessage = "AI Coding Agent 已更新。"
+  ) => {
     const nextStatus = next.status ?? task?.status;
     if (!nextStatus) return;
 
     const nextRepositoryId = next.repositoryId !== undefined ? next.repositoryId : repositoryId;
     const nextBaseBranch = next.baseBranch !== undefined ? next.baseBranch : baseBranch;
 
-    setLoadingAction("save");
+    setLoadingAction(nextStatus === "cancelled" ? "cancel" : nextStatus === "pending" ? "start" : "save");
     try {
       await issueAgentTaskService.update(workspaceSlug, projectId, issueId, {
         repository_id: nextRepositoryId || null,
@@ -106,13 +113,26 @@ export function IssueAgentTaskProperty(props: Props) {
         status: nextStatus,
       });
       await refreshTask();
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "AI Coding Agent 已更新", message: "状态和目标信息已保存。" });
+      setToast({ type: TOAST_TYPE.SUCCESS, title: "AI Coding Agent 已更新", message: successMessage });
     } catch (error: any) {
       showError(getErrorMessage(error, "AI Coding Agent 设置保存失败。"));
     } finally {
       setLoadingAction(null);
     }
   };
+
+  const startAgent = () => {
+    if (!repositoryId || !baseBranch) {
+      showError("请选择仓库和分支。");
+      return;
+    }
+    void saveTask(
+      { status: "pending", repositoryId, baseBranch },
+      isRerun ? "已重新加入等待队列。" : "已加入等待队列。"
+    );
+  };
+
+  const cancelAgent = () => saveTask({ status: "cancelled" }, "已取消等待，后续仍可再次让 AI 实现。");
 
   const syncBranches = async () => {
     if (!repositoryId) return;
@@ -140,33 +160,21 @@ export function IssueAgentTaskProperty(props: Props) {
       </div>
 
       <SidebarPropertyListItem icon={Bot} label="状态">
-        <select
-          className="h-7.5 w-full rounded bg-transparent px-2 text-body-xs-regular"
-          value={task?.status ?? ""}
-          disabled={disabled || isSaving}
-          onChange={(e) => saveTask({ status: e.target.value as TIssueAgentTaskStatus })}
-        >
-          <option value="" disabled>
-            未设置
-          </option>
-          {AGENT_TASK_STATUS_OPTIONS.map((statusOption) => (
-            <option key={statusOption.value} value={statusOption.value}>
-              {statusOption.label}
-            </option>
-          ))}
-        </select>
+        <span className="w-full px-2 text-body-xs-regular text-secondary">
+          {task?.status ? STATUS_LABELS[task.status] : "未设置"}
+        </span>
       </SidebarPropertyListItem>
 
       <SidebarPropertyListItem icon={Github} label="仓库">
         <select
           className="h-7.5 w-full rounded bg-transparent px-2 text-body-xs-regular"
           value={repositoryId}
-          disabled={disabled || isSaving}
+          disabled={!canEditTarget || isBusy}
           onChange={(e) => {
             const nextRepositoryId = e.target.value;
             setRepositoryId(nextRepositoryId);
             setBaseBranch("");
-            if (task?.status) void saveTask({ repositoryId: nextRepositoryId, baseBranch: "" });
+            if (task?.status === "pending") void saveTask({ repositoryId: nextRepositoryId, baseBranch: "" });
           }}
         >
           <option value="">选择仓库</option>
@@ -183,11 +191,11 @@ export function IssueAgentTaskProperty(props: Props) {
           <select
             className="h-7.5 min-w-0 grow rounded bg-transparent px-2 text-body-xs-regular"
             value={baseBranch}
-            disabled={disabled || isSaving || !repositoryId}
+            disabled={!canEditTarget || isBusy || !repositoryId}
             onChange={(e) => {
               const nextBaseBranch = e.target.value;
               setBaseBranch(nextBaseBranch);
-              if (task?.status) void saveTask({ baseBranch: nextBaseBranch });
+              if (task?.status === "pending") void saveTask({ baseBranch: nextBaseBranch });
             }}
           >
             <option value="">选择分支</option>
@@ -197,8 +205,14 @@ export function IssueAgentTaskProperty(props: Props) {
               </option>
             ))}
           </select>
-          {!disabled && isWorkspaceAdmin && (
-            <Button variant="ghost" size="sm" onClick={syncBranches} loading={loadingAction === "sync"}>
+          {canEditTarget && isWorkspaceAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={syncBranches}
+              loading={loadingAction === "sync"}
+              disabled={!repositoryId || isBusy}
+            >
               <RefreshCw className="size-3" />
             </Button>
           )}
@@ -206,30 +220,60 @@ export function IssueAgentTaskProperty(props: Props) {
       </SidebarPropertyListItem>
 
       {task?.work_branch && (
-        <div className="truncate px-2 text-caption text-secondary">工作分支：{task.work_branch}</div>
+        <div className="text-caption truncate px-2 text-secondary">工作分支：{task.work_branch}</div>
       )}
 
       {task?.pr_url && (
         <div className="flex items-center gap-1 px-2">
-          <a className="min-w-0 truncate text-caption text-link-primary" href={task.pr_url} target="_blank" rel="noreferrer">
+          <a
+            className="text-caption min-w-0 truncate text-link-primary"
+            href={task.pr_url}
+            target="_blank"
+            rel="noreferrer"
+          >
             {task.pr_url}
           </a>
           <ExternalLink className="size-3 shrink-0 text-secondary" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigator.clipboard?.writeText(task.pr_url ?? "")}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigator.clipboard?.writeText(task.pr_url ?? "")}>
             <Copy className="size-3" />
           </Button>
         </div>
       )}
 
       {task?.last_error && (
-        <div className="mx-2 max-h-24 overflow-y-auto rounded border border-danger-subtle bg-danger-subtle px-2 py-1 text-caption text-danger-primary">
+        <div className="text-caption mx-2 max-h-24 overflow-y-auto rounded border border-danger-subtle bg-danger-subtle px-2 py-1 text-danger-primary">
           {task.last_error}
         </div>
       )}
+
+      <div className="flex items-center gap-2 px-2">
+        {canStart && (
+          <Button
+            variant="primary"
+            size="sm"
+            className="min-w-0 grow justify-center"
+            onClick={startAgent}
+            loading={loadingAction === "start"}
+            disabled={!repositoryId || !baseBranch || isBusy}
+          >
+            <Bot className="size-3 shrink-0" />
+            <span className="truncate">{startButtonLabel}</span>
+          </Button>
+        )}
+        {isPending && !disabled && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="min-w-0 grow justify-center"
+            onClick={cancelAgent}
+            loading={loadingAction === "cancel"}
+            disabled={isBusy}
+          >
+            <XCircle className="size-3 shrink-0" />
+            <span className="truncate">取消等待</span>
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

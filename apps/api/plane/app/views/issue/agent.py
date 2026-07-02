@@ -86,10 +86,25 @@ class IssueAgentTaskEndpoint(BaseAPIView):
                 status=next_status,
             )
         else:
-            if task.status == IssueAgentTask.Status.FAILED and next_status == IssueAgentTask.Status.PENDING:
+            is_requeue = (
+                task.status
+                in [
+                    IssueAgentTask.Status.COMPLETED,
+                    IssueAgentTask.Status.FAILED,
+                    IssueAgentTask.Status.CANCELLED,
+                ]
+                and next_status == IssueAgentTask.Status.PENDING
+            )
+            if is_requeue:
                 task.retry_count += 1
                 task.last_error = None
-            if task.status == IssueAgentTask.Status.COMPLETED and next_status != IssueAgentTask.Status.COMPLETED:
+                task.pr_url = None
+                task.work_branch = None
+                task.claimed_by = None
+                task.claimed_at = None
+                task.started_at = None
+                task.completed_at = None
+            elif task.status == IssueAgentTask.Status.COMPLETED and next_status != IssueAgentTask.Status.COMPLETED:
                 task.pr_url = None
                 task.work_branch = None
                 task.completed_at = None
