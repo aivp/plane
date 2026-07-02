@@ -1,253 +1,69 @@
-# Agent GitHub API
+# AI Coding Agent Plane API
 
-本文档描述 Agent 任务卡片标志、GitHub 凭证/仓库/分支管理 API，以及外部 Coding Agent 领取和写回任务的 API。
+本文档只描述外部 AI Coding Agent 需要调用的 Plane API，用于从 Plane 领取待处理卡片，并把 PR 或错误信息写回 Plane。
 
-## 认证与权限
+本文档不包含 GitHub 凭证、GitHub 仓库、GitHub 分支管理 API。Agent 如需访问 GitHub，应使用自身运行环境中的 GitHub 凭证或独立配置；Plane 只向 Agent 提供任务上下文和写回入口。
 
-- App UI API 使用 Plane 登录态，路径前缀为 `/api/workspaces/...`。
-- 外部 Agent API 使用 `X-Api-Key`，路径前缀为 `/api/v1/...`。
-- 外部 Agent Token 必须是当前 workspace 下 `is_service=true` 的服务 Token。
-- GitHub 凭证管理仅 Workspace Admin 可访问。
-- 仓库和分支读取对活跃 workspace 成员开放，用于卡片选择。
-- 卡片 Agent task 写入要求 Project Admin/Member；Guest 只读。
-- 凭证响应永不返回 token 明文或加密密文，只返回 `token_last_four`。
+## 生产环境地址
 
-## GitHub 凭证
+当前部署环境：
 
-### 获取凭证列表
+```text
+https://plane.aidong-ai.com
+```
+
+Workspace slug：
+
+```text
+aidong
+```
+
+完整 API 地址：
 
 ```http
-GET /api/workspaces/{slug}/github/credentials/
+POST https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/claim/
+PATCH https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/{task_id}/
 ```
 
-响应：
+## 认证
 
-```json
-[
-  {
-    "id": "credential-id",
-    "name": "Aidong GitHub Bot",
-    "provider": "github",
-    "token_last_four": "abcd",
-    "status": "active",
-    "last_verified_at": "2026-07-02T10:00:00Z",
-    "last_error": null,
-    "created_at": "2026-07-02T09:58:00Z",
-    "updated_at": "2026-07-02T10:00:00Z"
-  }
-]
-```
-
-### 新增凭证
-
-```http
-POST /api/workspaces/{slug}/github/credentials/
-```
-
-请求：
-
-```json
-{
-  "name": "Aidong GitHub Bot",
-  "token": "github_pat_xxx"
-}
-```
-
-### 更新凭证
-
-```http
-PATCH /api/workspaces/{slug}/github/credentials/{credential_id}/
-```
-
-可更新 `name`，也可以重新提交 `token`。旧 token 不支持读取。
-
-### 验证凭证
-
-```http
-POST /api/workspaces/{slug}/github/credentials/{credential_id}/verify/
-```
-
-验证失败时返回 `status=invalid` 和简短 `last_error`，不会返回 token 内容。
-
-### 删除凭证
-
-```http
-DELETE /api/workspaces/{slug}/github/credentials/{credential_id}/
-```
-
-如果仍有手动仓库引用该凭证，返回 `409 Conflict`。
-
-## GitHub 仓库
-
-仓库来源：
-
-- `github_app`：从现有 GitHub App repository sync 记录自动同步，只允许查看和刷新分支。
-- `manual`：管理员手动新增，必须绑定凭证档案。
-
-### 获取仓库列表
-
-```http
-GET /api/workspaces/{slug}/github/repositories/
-```
-
-响应：
-
-```json
-[
-  {
-    "id": "repository-id",
-    "source": "manual",
-    "owner": "aidong",
-    "name": "plane",
-    "full_name": "aidong/plane",
-    "html_url": "https://github.com/aidong/plane",
-    "default_branch": "main",
-    "visibility": "private",
-    "sync_status": "synced",
-    "last_synced_at": "2026-07-02T10:00:00Z",
-    "last_sync_error": null,
-    "branch_count": 42
-  }
-]
-```
-
-### 新增手动仓库
-
-```http
-POST /api/workspaces/{slug}/github/repositories/
-```
-
-请求：
-
-```json
-{
-  "source": "manual",
-  "credential_profile_id": "credential-id",
-  "owner": "aidong",
-  "name": "plane",
-  "html_url": "https://github.com/aidong/plane"
-}
-```
-
-不允许通过该接口手动创建 `github_app` 来源仓库。
-
-### 刷新分支
-
-```http
-POST /api/workspaces/{slug}/github/repositories/{repository_id}/sync-branches/
-```
-
-刷新失败只更新 `sync_status=failed` 和 `last_sync_error`，旧分支缓存保留。
-
-### 获取分支
-
-```http
-GET /api/workspaces/{slug}/github/repositories/{repository_id}/branches/
-```
-
-响应：
-
-```json
-{
-  "results": [
-    {
-      "id": "branch-id",
-      "name": "main",
-      "sha": "abc123",
-      "protected": true,
-      "is_default": true,
-      "last_seen_at": "2026-07-02T10:00:00Z"
-    }
-  ]
-}
-```
-
-## 卡片 AI Coding Agent 任务
-
-### 获取任务配置
-
-```http
-GET /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
-```
-
-未配置时返回 `null`。
-
-### 创建或更新任务
-
-```http
-PUT /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
-PATCH /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
-```
-
-请求：
-
-```json
-{
-  "repository_id": null,
-  "base_branch": "",
-  "status": "pending"
-}
-```
-
-也可以在选择仓库和分支后写入完整目标：
-
-```json
-{
-  "repository_id": "repository-id",
-  "base_branch": "main",
-  "status": "pending"
-}
-```
-
-响应：
-
-```json
-{
-  "id": "task-id",
-  "status": "pending",
-  "repository": {
-    "id": "repository-id",
-    "full_name": "aidong/plane",
-    "html_url": "https://github.com/aidong/plane"
-  },
-  "base_branch": "main",
-  "work_branch": null,
-  "pr_url": null,
-  "last_error": null,
-  "claimed_by": null,
-  "claimed_at": null,
-  "completed_at": null,
-  "retry_count": 0
-}
-```
-
-规则：
-
-- `status` 支持 `pending`、`running`、`completed`、`failed`、`cancelled`，卡片侧允许用户手动修改。
-- `repository_id` 可以为空；为空时 `base_branch` 也必须为空。
-- `repository_id` 不为空时，仓库必须属于当前 workspace。
-- `base_branch` 不为空时，必须存在于该仓库的分支缓存。
-- 未选择仓库/分支的 `pending` 任务只作为卡片标记保存，不会被外部 Agent 领取。
-- `failed` 可重试，重试会把状态改回 `pending`、清空 `last_error`、`retry_count + 1`。
-- `completed` 改成其他状态时会清空 PR、工作分支、完成时间和错误信息。
-
-### 取消任务
-
-```http
-DELETE /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
-```
-
-卡片页面不再提供单独的取消按钮，推荐通过 `PATCH` 把 `status` 改为 `cancelled`。旧的 `DELETE` 接口仍会把任务标记为 `cancelled`，但 `running` 和 `completed` 任务不能通过 `DELETE` 取消。
-
-## 外部 Agent API
-
-所有请求必须携带：
+所有 Agent API 路径前缀为 `/api/v1/...`，请求必须携带有效 Plane API Key：
 
 ```http
 X-Api-Key: plane_api_xxx
 ```
 
-### 领取任务
+支持两类 Token：
+
+- Workspace 服务 Token：`is_service=true`，且绑定当前 workspace。
+- 个人 Token：`is_service=false`，且 Token 所属用户必须是当前 workspace 的活跃成员。
+
+通用要求：
+
+- Token 必须处于启用状态。
+- Token 不能过期。
+- 不要把真实 API Key 提交到文档或代码仓库；示例统一使用 `plane_api_xxx` 占位。
+
+错误：
+
+- `401`：API Key 缺失或认证失败。
+- `403`：API Key 不属于当前 workspace，或个人 Token 所属用户不是当前 workspace 的活跃成员。
+
+## 状态语义
+
+Agent 只处理 `pending` 任务，并只允许写回 `completed` 或 `failed`。
+
+```text
+pending    等待中，可被 Agent 领取
+running    执行中，已被 Agent 领取
+completed  已完成，Agent 已写回 PR
+failed     失败，Agent 已写回错误信息
+cancelled  已取消，不会被 Agent 领取
+```
+
+领取成功后，Plane 会立即把任务从 `pending` 更新为 `running`。
+
+## 领取任务
 
 ```http
 POST /api/v1/workspaces/{slug}/agent/tasks/claim/
@@ -261,6 +77,11 @@ POST /api/v1/workspaces/{slug}/agent/tasks/claim/
   "limit": 1
 }
 ```
+
+字段说明：
+
+- `agent_id`：必填，调用方 Agent 实例标识。Plane 会写入 `claimed_by`。
+- `limit`：可选，默认 `1`，范围 `1..10`。
 
 响应：
 
@@ -289,45 +110,175 @@ POST /api/v1/workspaces/{slug}/agent/tasks/claim/
 }
 ```
 
-领取使用 `select_for_update(skip_locked=True)`，只领取 `pending` 且已配置仓库和目标分支的任务。领取成功后立即写入 `running`、`claimed_by`、`claimed_at`、`started_at` 和后端生成的 `work_branch`。
+没有可领取任务时：
 
-### 完成任务
+```json
+{
+  "results": []
+}
+```
+
+领取规则：
+
+- 只领取 `status=pending` 的任务。
+- 只领取已配置 `repository` 和 `base_branch` 的任务。
+- 后端使用 `select_for_update(skip_locked=True)` 原子领取，避免多个 Agent 领取同一任务。
+- 领取时 Plane 会写入 `running`、`claimed_by`、`claimed_at`、`started_at`。
+- `work_branch` 由 Plane 生成，格式为 `ai/{project_identifier}-{sequence_id}-{slug}`。
+
+## 写回任务
 
 ```http
 PATCH /api/v1/workspaces/{slug}/agent/tasks/{task_id}/
 ```
 
+写回要求：
+
+- 任务必须存在于当前 workspace。
+- 任务当前状态必须是 `running`。
+- 如果请求体携带 `agent_id`，必须与领取时的 `claimed_by` 一致。
+- 已完成任务不能再次写回。
+
+### 写回完成
+
 请求：
 
 ```json
 {
+  "agent_id": "coding-agent-01",
   "status": "completed",
   "work_branch": "ai/WEB-123-fix-login-error",
   "pr_url": "https://github.com/aidong/plane/pull/456"
 }
 ```
 
-### 标记失败
+字段说明：
 
-```http
-PATCH /api/v1/workspaces/{slug}/agent/tasks/{task_id}/
+- `status`：必填，必须是 `completed`。
+- `pr_url`：必填，必须是合法 URL。
+- `work_branch`：可选；如果传入，会覆盖领取时生成的工作分支。
+- `agent_id`：建议传入，用于防止其他 Agent 误写回当前任务。
+
+成功后 Plane 会：
+
+- 保存 `pr_url`。
+- 清空 `last_error`。
+- 写入 `completed_at`。
+- 创建 issue activity。
+- 通知负责人。
+
+响应：
+
+```json
+{
+  "task_id": "task-id",
+  "issue": {
+    "id": "issue-id",
+    "project_id": "project-id",
+    "sequence_id": 123,
+    "name": "Fix login error",
+    "description_html": "<p>...</p>",
+    "assignee_ids": ["user-id"]
+  },
+  "repository": {
+    "id": "repository-id",
+    "full_name": "aidong/plane",
+    "html_url": "https://github.com/aidong/plane"
+  },
+  "base_branch": "main",
+  "work_branch": "ai/WEB-123-fix-login-error"
+}
 ```
+
+### 写回失败
 
 请求：
 
 ```json
 {
+  "agent_id": "coding-agent-01",
   "status": "failed",
   "last_error": "Type check failed in packages/types/src/issues/issue.ts"
 }
 ```
 
-写回要求任务当前为 `running`。如果请求体携带 `agent_id`，必须与领取时的 `claimed_by` 一致。
+字段说明：
 
-错误码：
+- `status`：必填，必须是 `failed`。
+- `last_error`：必填，保存给负责人查看的错误摘要。
+- `agent_id`：建议传入，用于防止其他 Agent 误写回当前任务。
 
-- `400`：状态非法、缺少必填字段或 PR URL 不合法。
-- `401`：API Key 无效或缺失。
-- `403`：API Key 不是当前 workspace 的服务 Token。
+成功后 Plane 会：
+
+- 保存 `last_error`。
+- 清空 `completed_at`。
+- 创建 issue activity。
+- 通知负责人。
+
+## 错误码
+
+- `400`：请求字段缺失、状态非法、`limit` 非数字、`pr_url` 不合法。
+- `401`：API Key 缺失或认证失败。
+- `403`：API Key 不允许访问当前 workspace。
 - `404`：任务不存在。
-- `409`：任务不是运行中、已完成，或已被其他 Agent 领取。
+- `409`：任务不是 `running`、任务已完成，或任务已被其他 Agent 领取。
+
+## cURL 示例
+
+领取任务：
+
+```bash
+curl -X POST "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/claim/" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: plane_api_xxx" \
+  -d '{
+    "agent_id": "coding-agent-01",
+    "limit": 1
+  }'
+```
+
+写回 PR：
+
+```bash
+curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/task-id/" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: plane_api_xxx" \
+  -d '{
+    "agent_id": "coding-agent-01",
+    "status": "completed",
+    "work_branch": "ai/WEB-123-fix-login-error",
+    "pr_url": "https://github.com/aidong/plane/pull/456"
+  }'
+```
+
+写回失败：
+
+```bash
+curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/task-id/" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: plane_api_xxx" \
+  -d '{
+    "agent_id": "coding-agent-01",
+    "status": "failed",
+    "last_error": "Type check failed in packages/types/src/issues/issue.ts"
+  }'
+```
+
+可用性测试：
+
+```bash
+curl -X PATCH "https://plane.aidong-ai.com/api/v1/workspaces/aidong/agent/tasks/00000000-0000-0000-0000-000000000000/" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: plane_api_xxx" \
+  -d '{
+    "agent_id": "coding-agent-smoke-test",
+    "status": "failed",
+    "last_error": "smoke test"
+  }'
+```
+
+预期结果：
+
+- `404 Task not found.`：认证、workspace 权限和路由正常，只是测试任务不存在。
+- `403 Token is not allowed for this workspace.`：API Key 有效，但不允许访问 `aidong` workspace。服务 Token 需要绑定该 workspace；个人 Token 所属用户需要是该 workspace 活跃成员。
+- `403 Given API token is not valid`：API Key 无效、过期或已停用。

@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from plane.app.serializers import IssueActivitySerializer
 from plane.api.views.base import BaseAPIView
 from plane.bgtasks.notification_task import notifications
-from plane.db.models import APIToken, IssueActivity, IssueAgentTask, IssueSubscriber
+from plane.db.models import APIToken, IssueActivity, IssueAgentTask, IssueSubscriber, WorkspaceMember
 from plane.utils.agent_task import make_agent_work_branch
 
 
@@ -42,13 +42,20 @@ def _task_response(task):
     }
 
 
-def _get_service_token(token, slug):
-    return APIToken.objects.filter(
-        token=token,
-        workspace__slug=slug,
-        is_active=True,
-        is_service=True,
-    ).first()
+def _get_agent_api_token(token, slug):
+    api_token = APIToken.objects.select_related("workspace", "user").filter(token=token, is_active=True).first()
+    if not api_token:
+        return None
+
+    if api_token.is_service:
+        if api_token.workspace_id and api_token.workspace.slug == slug:
+            return api_token
+        return None
+
+    if WorkspaceMember.objects.filter(workspace__slug=slug, member_id=api_token.user_id, is_active=True).exists():
+        return api_token
+
+    return None
 
 
 def _responsible_user_ids(task):
@@ -109,7 +116,7 @@ def _notify_agent_task_update(api_token, task):
 
 class AgentTaskClaimAPIEndpoint(BaseAPIView):
     def post(self, request, slug):
-        api_token = _get_service_token(request.auth, slug)
+        api_token = _get_agent_api_token(request.auth, slug)
         if not api_token:
             return Response({"error": "Token is not allowed for this workspace."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -165,7 +172,7 @@ class AgentTaskClaimAPIEndpoint(BaseAPIView):
 
 class AgentTaskUpdateAPIEndpoint(BaseAPIView):
     def patch(self, request, slug, task_id):
-        api_token = _get_service_token(request.auth, slug)
+        api_token = _get_agent_api_token(request.auth, slug)
         if not api_token:
             return Response({"error": "Token is not allowed for this workspace."}, status=status.HTTP_403_FORBIDDEN)
 
