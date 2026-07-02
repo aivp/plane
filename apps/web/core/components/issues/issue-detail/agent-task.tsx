@@ -4,12 +4,13 @@
  * See the LICENSE file for details.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR, { mutate } from "swr";
-import { Bot, Copy, ExternalLink, GitBranch, RefreshCw } from "lucide-react";
+import { Bot, Copy, ExternalLink, GitBranch, Github, RefreshCw } from "lucide-react";
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
+import type { TIssueAgentTaskStatus } from "@plane/types";
 import {
   GITHUB_MANAGED_REPOSITORIES,
   GITHUB_REPOSITORY_BRANCHES,
@@ -34,6 +35,14 @@ const issueAgentTaskService = new IssueAgentTaskService();
 const getErrorMessage = (error: any, fallback: string) =>
   error?.response?.data?.error ?? error?.data?.error ?? error?.message ?? fallback;
 
+const AGENT_TASK_STATUS_OPTIONS: { value: TIssueAgentTaskStatus; label: string }[] = [
+  { value: "pending", label: "等待中" },
+  { value: "running", label: "执行中" },
+  { value: "completed", label: "已完成" },
+  { value: "failed", label: "失败" },
+  { value: "cancelled", label: "已取消" },
+];
+
 export function IssueAgentTaskProperty(props: Props) {
   const { workspaceSlug, projectId, issueId, disabled } = props;
   const { allowPermissions } = useUserPermissions();
@@ -52,118 +61,54 @@ export function IssueAgentTaskProperty(props: Props) {
     () => githubRepositoryService.listBranches(workspaceSlug, repositoryId)
   );
 
-  const selectedRepository = useMemo(
-    () => repositories.find((repository) => repository.id === repositoryId),
-    [repositories, repositoryId]
-  );
   const isWorkspaceAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE, workspaceSlug);
-  const isProjectAdmin = allowPermissions(
-    [EUserPermissions.ADMIN],
-    EUserPermissionsLevel.PROJECT,
-    workspaceSlug,
-    projectId
-  );
-  const isReadOnly = disabled || task?.status === "running" || task?.status === "completed";
-  const canSubmit = Boolean(repositoryId && baseBranch && !isReadOnly);
-  const canResetCompleted = Boolean(task?.status === "completed" && !disabled && (isWorkspaceAdmin || isProjectAdmin));
-  const taskRepositoryId = task?.repository?.id ?? "";
+  const isSaving = loadingAction === "save";
 
   useEffect(() => {
     if (task) {
       setRepositoryId(task.repository?.id ?? "");
-      setBaseBranch(task.base_branch);
+      setBaseBranch(task.base_branch ?? "");
     }
   }, [task?.id, task?.repository?.id, task?.base_branch]);
 
   useEffect(() => {
-    if (!task && !repositoryId && repositories[0]) setRepositoryId(repositories[0].id);
-  }, [task, repositories, repositoryId]);
-
-  useEffect(() => {
-    if (!isReadOnly && !baseBranch && branches.length > 0) {
-      const defaultBranch = branches.find((branch) => branch.is_default)?.name;
-      setBaseBranch(defaultBranch ?? selectedRepository?.default_branch ?? branches[0].name);
+    if (!task) {
+      setRepositoryId("");
+      setBaseBranch("");
     }
-  }, [isReadOnly, selectedRepository, branches, baseBranch]);
+  }, [issueId, task]);
 
   const showError = (message: string) =>
     setToast({
       type: TOAST_TYPE.ERROR,
-      title: "Agent 任务操作失败",
+      title: "AI Coding Agent 设置失败",
       message,
     });
 
   const refreshTask = () => mutate(ISSUE_AGENT_TASK(issueId));
 
-  const submitTask = async () => {
-    if (!canSubmit) return;
-    setLoadingAction("submit");
-    try {
-      await issueAgentTaskService.upsert(workspaceSlug, projectId, issueId, {
-        repository_id: repositoryId,
-        base_branch: baseBranch,
-        status: "pending",
-      });
-      await refreshTask();
-      setToast({ type: TOAST_TYPE.SUCCESS, title: "已交给 Agent", message: "当前卡片已进入等待队列。" });
-    } catch (error: any) {
-      showError(getErrorMessage(error, "Agent 任务保存失败。"));
-    } finally {
-      setLoadingAction(null);
-    }
-  };
+  const saveTask = async (next: {
+    status?: TIssueAgentTaskStatus;
+    repositoryId?: string;
+    baseBranch?: string;
+  }) => {
+    const nextStatus = next.status ?? task?.status;
+    if (!nextStatus) return;
 
-  const retryTask = async () => {
-    if (!task) return;
-    const nextRepositoryId = repositoryId || taskRepositoryId;
-    const nextBaseBranch = baseBranch || task.base_branch;
-    if (!nextRepositoryId || !nextBaseBranch) {
-      showError("请先选择仓库和分支。");
-      return;
-    }
-    setLoadingAction("retry");
+    const nextRepositoryId = next.repositoryId !== undefined ? next.repositoryId : repositoryId;
+    const nextBaseBranch = next.baseBranch !== undefined ? next.baseBranch : baseBranch;
+
+    setLoadingAction("save");
     try {
       await issueAgentTaskService.update(workspaceSlug, projectId, issueId, {
-        repository_id: nextRepositoryId,
-        base_branch: nextBaseBranch,
-        status: "pending",
+        repository_id: nextRepositoryId || null,
+        base_branch: nextBaseBranch || "",
+        status: nextStatus,
       });
       await refreshTask();
+      setToast({ type: TOAST_TYPE.SUCCESS, title: "AI Coding Agent 已更新", message: "状态和目标信息已保存。" });
     } catch (error: any) {
-      showError(getErrorMessage(error, "Agent 任务重试失败。"));
-    } finally {
-      setLoadingAction(null);
-    }
-  };
-
-  const resetCompletedTask = async () => {
-    if (!task) return;
-    if (!taskRepositoryId || !task.base_branch) {
-      showError("当前任务缺少仓库或分支，不能重置。");
-      return;
-    }
-    setLoadingAction("reset");
-    try {
-      await issueAgentTaskService.update(workspaceSlug, projectId, issueId, {
-        repository_id: taskRepositoryId,
-        base_branch: task.base_branch,
-        status: "pending",
-      });
-      await refreshTask();
-    } catch (error: any) {
-      showError(getErrorMessage(error, "Agent 任务重置失败。"));
-    } finally {
-      setLoadingAction(null);
-    }
-  };
-
-  const cancelTask = async () => {
-    setLoadingAction("cancel");
-    try {
-      await issueAgentTaskService.cancel(workspaceSlug, projectId, issueId);
-      await refreshTask();
-    } catch (error: any) {
-      showError(getErrorMessage(error, "Agent 任务取消失败。"));
+      showError(getErrorMessage(error, "AI Coding Agent 设置保存失败。"));
     } finally {
       setLoadingAction(null);
     }
@@ -190,18 +135,38 @@ export function IssueAgentTaskProperty(props: Props) {
   return (
     <div className="space-y-2.5 border-t border-subtle pt-3">
       <div className="flex items-center justify-between">
-        <h5 className="text-body-xs-medium">Agent</h5>
+        <h5 className="text-body-xs-medium">AI Coding Agent</h5>
         {task && <IssueAgentTaskBadge task={task} />}
       </div>
 
-      <SidebarPropertyListItem icon={Bot} label="仓库">
+      <SidebarPropertyListItem icon={Bot} label="状态">
+        <select
+          className="h-7.5 w-full rounded bg-transparent px-2 text-body-xs-regular"
+          value={task?.status ?? ""}
+          disabled={disabled || isSaving}
+          onChange={(e) => saveTask({ status: e.target.value as TIssueAgentTaskStatus })}
+        >
+          <option value="" disabled>
+            未设置
+          </option>
+          {AGENT_TASK_STATUS_OPTIONS.map((statusOption) => (
+            <option key={statusOption.value} value={statusOption.value}>
+              {statusOption.label}
+            </option>
+          ))}
+        </select>
+      </SidebarPropertyListItem>
+
+      <SidebarPropertyListItem icon={Github} label="仓库">
         <select
           className="h-7.5 w-full rounded bg-transparent px-2 text-body-xs-regular"
           value={repositoryId}
-          disabled={isReadOnly}
+          disabled={disabled || isSaving}
           onChange={(e) => {
-            setRepositoryId(e.target.value);
+            const nextRepositoryId = e.target.value;
+            setRepositoryId(nextRepositoryId);
             setBaseBranch("");
+            if (task?.status) void saveTask({ repositoryId: nextRepositoryId, baseBranch: "" });
           }}
         >
           <option value="">选择仓库</option>
@@ -218,8 +183,12 @@ export function IssueAgentTaskProperty(props: Props) {
           <select
             className="h-7.5 min-w-0 grow rounded bg-transparent px-2 text-body-xs-regular"
             value={baseBranch}
-            disabled={isReadOnly || !repositoryId}
-            onChange={(e) => setBaseBranch(e.target.value)}
+            disabled={disabled || isSaving || !repositoryId}
+            onChange={(e) => {
+              const nextBaseBranch = e.target.value;
+              setBaseBranch(nextBaseBranch);
+              if (task?.status) void saveTask({ baseBranch: nextBaseBranch });
+            }}
           >
             <option value="">选择分支</option>
             {branches.map((branch) => (
@@ -228,7 +197,7 @@ export function IssueAgentTaskProperty(props: Props) {
               </option>
             ))}
           </select>
-          {!isReadOnly && isWorkspaceAdmin && (
+          {!disabled && isWorkspaceAdmin && (
             <Button variant="ghost" size="sm" onClick={syncBranches} loading={loadingAction === "sync"}>
               <RefreshCw className="size-3" />
             </Button>
@@ -259,38 +228,6 @@ export function IssueAgentTaskProperty(props: Props) {
       {task?.last_error && (
         <div className="mx-2 max-h-24 overflow-y-auto rounded border border-danger-subtle bg-danger-subtle px-2 py-1 text-caption text-danger-primary">
           {task.last_error}
-        </div>
-      )}
-
-      {!task || task.status === "pending" || task.status === "cancelled" ? (
-        <div className="flex gap-2 px-2">
-          <Button variant="primary" size="sm" onClick={submitTask} loading={loadingAction === "submit"} disabled={!canSubmit}>
-            {task?.status === "cancelled" ? "重新交给 Agent" : "交给 Agent 处理"}
-          </Button>
-          {task && (
-            <Button variant="secondary" size="sm" onClick={cancelTask} loading={loadingAction === "cancel"} disabled={disabled}>
-              取消
-            </Button>
-          )}
-        </div>
-      ) : null}
-
-      {task?.status === "failed" && (
-        <div className="flex gap-2 px-2">
-          <Button variant="primary" size="sm" onClick={retryTask} loading={loadingAction === "retry"} disabled={disabled}>
-            重试
-          </Button>
-          <Button variant="secondary" size="sm" onClick={cancelTask} loading={loadingAction === "cancel"} disabled={disabled}>
-            取消
-          </Button>
-        </div>
-      )}
-
-      {canResetCompleted && (
-        <div className="flex gap-2 px-2">
-          <Button variant="secondary" size="sm" onClick={resetCompletedTask} loading={loadingAction === "reset"}>
-            重置为等待中
-          </Button>
         </div>
       )}
     </div>

@@ -270,9 +270,11 @@ class IssueAgentTask(BaseModel):
     repository = models.ForeignKey(
         "db.GithubManagedRepository",
         related_name="issue_agent_tasks",
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
     )
-    base_branch = models.CharField(max_length=255)
+    base_branch = models.CharField(max_length=255, blank=True, default="")
     work_branch = models.CharField(max_length=255, null=True, blank=True)
     status = models.CharField(max_length=32, choices=Status.choices, default=Status.PENDING)
     pr_url = models.URLField(null=True, blank=True)

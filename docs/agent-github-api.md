@@ -162,7 +162,7 @@ GET /api/workspaces/{slug}/github/repositories/{repository_id}/branches/
 }
 ```
 
-## 卡片 Agent Task
+## 卡片 AI Coding Agent 任务
 
 ### 获取任务配置
 
@@ -180,6 +180,16 @@ PATCH /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
 ```
 
 请求：
+
+```json
+{
+  "repository_id": null,
+  "base_branch": "",
+  "status": "pending"
+}
+```
+
+也可以在选择仓库和分支后写入完整目标：
 
 ```json
 {
@@ -213,12 +223,13 @@ PATCH /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
 
 规则：
 
-- `repository_id` 必须属于当前 workspace。
-- `base_branch` 必须存在于该仓库的分支缓存。
-- 用户侧只能写入 `pending`，不能伪造 `running/completed/failed`。
-- `running` 不允许用户修改。
+- `status` 支持 `pending`、`running`、`completed`、`failed`、`cancelled`，卡片侧允许用户手动修改。
+- `repository_id` 可以为空；为空时 `base_branch` 也必须为空。
+- `repository_id` 不为空时，仓库必须属于当前 workspace。
+- `base_branch` 不为空时，必须存在于该仓库的分支缓存。
+- 未选择仓库/分支的 `pending` 任务只作为卡片标记保存，不会被外部 Agent 领取。
 - `failed` 可重试，重试会把状态改回 `pending`、清空 `last_error`、`retry_count + 1`。
-- `completed` 只有管理员可以重置为 `pending`，重置时会清空 PR 和工作分支。
+- `completed` 改成其他状态时会清空 PR、工作分支、完成时间和错误信息。
 
 ### 取消任务
 
@@ -226,7 +237,7 @@ PATCH /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
 DELETE /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/agent-task/
 ```
 
-`running` 和 `completed` 任务不能通过用户侧取消。`completed` 任务需要由管理员重置为 `pending`。
+卡片页面不再提供单独的取消按钮，推荐通过 `PATCH` 把 `status` 改为 `cancelled`。旧的 `DELETE` 接口仍会把任务标记为 `cancelled`，但 `running` 和 `completed` 任务不能通过 `DELETE` 取消。
 
 ## 外部 Agent API
 
@@ -278,7 +289,7 @@ POST /api/v1/workspaces/{slug}/agent/tasks/claim/
 }
 ```
 
-领取使用 `select_for_update(skip_locked=True)`，只领取 `pending` 任务。领取成功后立即写入 `running`、`claimed_by`、`claimed_at`、`started_at` 和后端生成的 `work_branch`。
+领取使用 `select_for_update(skip_locked=True)`，只领取 `pending` 且已配置仓库和目标分支的任务。领取成功后立即写入 `running`、`claimed_by`、`claimed_at`、`started_at` 和后端生成的 `work_branch`。
 
 ### 完成任务
 

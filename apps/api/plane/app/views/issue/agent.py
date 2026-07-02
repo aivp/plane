@@ -2,33 +2,24 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 
 from plane.app.permissions import ROLE, allow_permission
 from plane.app.serializers import IssueAgentTaskSerializer
 from plane.app.views.base import BaseAPIView
-from plane.db.models import GithubManagedRepository, GithubRepositoryBranch, Issue, IssueAgentTask, ProjectMember, WorkspaceMember
-
-
-def _is_project_or_workspace_admin(request, slug, project_id):
-    return WorkspaceMember.objects.filter(
-        workspace__slug=slug,
-        member=request.user,
-        role=ROLE.ADMIN.value,
-        is_active=True,
-    ).exists() or ProjectMember.objects.filter(
-        workspace__slug=slug,
-        project_id=project_id,
-        member=request.user,
-        role=ROLE.ADMIN.value,
-        is_active=True,
-    ).exists()
+from plane.db.models import GithubManagedRepository, GithubRepositoryBranch, Issue, IssueAgentTask
 
 
 def _validate_repository_branch(slug, repository_id, base_branch):
+    if not repository_id:
+        if base_branch:
+            raise ValueError("Repository is required when base_branch is provided.")
+        return None
+
     repository = GithubManagedRepository.objects.get(workspace__slug=slug, pk=repository_id)
-    if not GithubRepositoryBranch.objects.filter(repository=repository, name=base_branch).exists():
+    if base_branch and not GithubRepositoryBranch.objects.filter(repository=repository, name=base_branch).exists():
         raise ValueError("Base branch does not exist in the selected repository.")
     return repository
 
@@ -71,33 +62,14 @@ class IssueAgentTaskEndpoint(BaseAPIView):
         task = IssueAgentTask.objects.filter(issue=issue).select_related("repository").first()
 
         repository_id = request.data.get("repository_id", task.repository_id if task else None)
-        base_branch = request.data.get("base_branch", task.base_branch if task else None)
+        base_branch = request.data.get("base_branch", task.base_branch if task else "")
         next_status = request.data.get("status", IssueAgentTask.Status.PENDING)
 
-        if not repository_id or not base_branch:
+        if next_status not in IssueAgentTask.Status.values:
             return Response(
-                {"error": "repository_id and base_branch are required."},
+                {"error": "Invalid agent task status."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-        if next_status != IssueAgentTask.Status.PENDING:
-            return Response(
-                {"error": "Users can only queue agent tasks with pending status."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if task and task.status == IssueAgentTask.Status.RUNNING:
-            return Response(
-                {"error": "Running agent tasks cannot be changed."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if task and task.status == IssueAgentTask.Status.COMPLETED and next_status == IssueAgentTask.Status.PENDING:
-            if not _is_project_or_workspace_admin(request, slug, project_id):
-                return Response(
-                    {"error": "Only admins can reset a completed agent task."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
 
         try:
             repository = _validate_repository_branch(slug, repository_id, base_branch)
@@ -110,20 +82,22 @@ class IssueAgentTaskEndpoint(BaseAPIView):
                 project=issue.project,
                 workspace=issue.workspace,
                 repository=repository,
-                base_branch=base_branch,
-                status=IssueAgentTask.Status.PENDING,
+                base_branch=base_branch or "",
+                status=next_status,
             )
         else:
             if task.status == IssueAgentTask.Status.FAILED and next_status == IssueAgentTask.Status.PENDING:
                 task.retry_count += 1
                 task.last_error = None
-            if task.status == IssueAgentTask.Status.COMPLETED and next_status == IssueAgentTask.Status.PENDING:
+            if task.status == IssueAgentTask.Status.COMPLETED and next_status != IssueAgentTask.Status.COMPLETED:
                 task.pr_url = None
                 task.work_branch = None
                 task.completed_at = None
                 task.last_error = None
+            if next_status == IssueAgentTask.Status.COMPLETED and not task.completed_at:
+                task.completed_at = timezone.now()
             task.repository = repository
-            task.base_branch = base_branch
+            task.base_branch = base_branch or ""
             task.status = next_status
             task.save()
 

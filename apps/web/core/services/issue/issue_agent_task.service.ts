@@ -24,8 +24,8 @@ export class IssueAgentTaskService extends APIService {
     projectId: string,
     issueId: string,
     data: {
-      repository_id: string;
-      base_branch: string;
+      repository_id?: string | null;
+      base_branch?: string;
       status?: TIssueAgentTaskStatus;
     }
   ): Promise<TIssueAgentTask> {
@@ -39,7 +39,7 @@ export class IssueAgentTaskService extends APIService {
     projectId: string,
     issueId: string,
     data: Partial<{
-      repository_id: string;
+      repository_id: string | null;
       base_branch: string;
       status: TIssueAgentTaskStatus;
     }>

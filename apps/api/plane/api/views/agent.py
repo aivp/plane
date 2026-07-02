@@ -128,7 +128,12 @@ class AgentTaskClaimAPIEndpoint(BaseAPIView):
         with transaction.atomic():
             tasks = (
                 IssueAgentTask.objects.select_for_update(skip_locked=True)
-                .filter(workspace__slug=slug, status=IssueAgentTask.Status.PENDING)
+                .filter(
+                    workspace__slug=slug,
+                    status=IssueAgentTask.Status.PENDING,
+                    repository__isnull=False,
+                )
+                .exclude(base_branch="")
                 .select_related("issue", "issue__project", "repository")
                 .order_by("created_at")[:limit]
             )

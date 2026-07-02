@@ -261,7 +261,7 @@ class Migration(migrations.Migration):
                         unique=True,
                     ),
                 ),
-                ("base_branch", models.CharField(max_length=255)),
+                ("base_branch", models.CharField(blank=True, default="", max_length=255)),
                 ("work_branch", models.CharField(blank=True, max_length=255, null=True)),
                 (
                     "status",
@@ -309,6 +309,8 @@ class Migration(migrations.Migration):
                 (
                     "repository",
                     models.ForeignKey(
+                        blank=True,
+                        null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="issue_agent_tasks",
                         to="db.githubmanagedrepository",

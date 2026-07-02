@@ -15,11 +15,15 @@ def agent_task_payload(task: IssueAgentTask | None) -> dict[str, Any] | None:
     return {
         "id": task.id,
         "status": task.status,
-        "repository": {
-            "id": repository.id,
-            "full_name": repository.full_name,
-            "html_url": repository.html_url,
-        },
+        "repository": (
+            {
+                "id": repository.id,
+                "full_name": repository.full_name,
+                "html_url": repository.html_url,
+            }
+            if repository
+            else None
+        ),
         "base_branch": task.base_branch,
         "work_branch": task.work_branch,
         "pr_url": task.pr_url,

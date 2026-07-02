@@ -158,7 +158,7 @@ class GithubRepositoryLiteSerializer(BaseSerializer):
 
 class IssueAgentTaskSerializer(BaseSerializer):
     repository = GithubRepositoryLiteSerializer(read_only=True)
-    repository_id = serializers.UUIDField(write_only=True, required=False)
+    repository_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = IssueAgentTask
