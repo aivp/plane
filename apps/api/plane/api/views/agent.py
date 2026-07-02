@@ -187,7 +187,12 @@ class AgentIssueClaimAPIEndpoint(BaseAPIView):
         now = timezone.now()
 
         with transaction.atomic():
-            task = _agent_issue_queryset(slug).select_for_update().filter(issue_id=issue_id).first()
+            task = (
+                IssueAgentTask.objects.select_for_update()
+                .filter(workspace__slug=slug, issue_id=issue_id)
+                .select_related("issue", "issue__project")
+                .first()
+            )
             if not task:
                 return Response({"error": "Issue agent state not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -221,6 +226,7 @@ class AgentIssueClaimAPIEndpoint(BaseAPIView):
                 ]
             )
 
+        task = _agent_issue_queryset(slug).get(pk=task.pk)
         return Response(_task_response(task), status=status.HTTP_200_OK)
 
 
