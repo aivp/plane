@@ -9,6 +9,7 @@ import { observer } from "mobx-react";
 import { MoreHorizontal } from "lucide-react";
 // types
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { IconButton } from "@plane/propel/icon-button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IProjectView } from "@plane/types";
@@ -41,6 +42,7 @@ export const ViewQuickActions = observer(function ViewQuickActions(props: Props)
   // store hooks
   const { data } = useUser();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
   // auth
   const isOwner = view?.owned_by === data?.id;
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.PROJECT, workspaceSlug, projectId);
@@ -55,8 +57,8 @@ export const ViewQuickActions = observer(function ViewQuickActions(props: Props)
     copyUrlToClipboard(viewLink).then(() => {
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Link Copied!",
-        message: "View link copied to clipboard.",
+        title: t("common.link_copied"),
+        message: t("view.copy_link.success"),
       });
     });
   const handleOpenInNewTab = () => window.open(`/${viewLink}`, "_blank");

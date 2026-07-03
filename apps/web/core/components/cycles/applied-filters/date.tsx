@@ -7,6 +7,7 @@
 import { observer } from "mobx-react";
 // helpers
 import { DATE_AFTER_FILTER_OPTIONS } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { CloseIcon } from "@plane/propel/icons";
 import { renderFormattedDate, capitalizeFirstLetter } from "@plane/utils";
 // constants
@@ -19,20 +20,21 @@ type Props = {
 
 export const AppliedDateFilters = observer(function AppliedDateFilters(props: Props) {
   const { editable, handleRemove, values } = props;
+  const { t } = useTranslation();
 
   const getDateLabel = (value: string): string => {
     let dateLabel = "";
 
     const dateDetails = DATE_AFTER_FILTER_OPTIONS.find((d) => d.value === value);
 
-    if (dateDetails) dateLabel = dateDetails.name;
+    if (dateDetails) dateLabel = dateDetails.i18n_name ? t(dateDetails.i18n_name) : dateDetails.name;
     else {
       const dateParts = value.split(";");
 
       if (dateParts.length === 2) {
         const [date, time] = dateParts;
 
-        dateLabel = `${capitalizeFirstLetter(time)} ${renderFormattedDate(date)}`;
+        dateLabel = `${capitalizeFirstLetter(t(`date_filters.${time}`))} ${renderFormattedDate(date)}`;
       }
     }
 

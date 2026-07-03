@@ -10,7 +10,7 @@ import { observer } from "mobx-react";
 import { NETWORK_CHOICES } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 // components
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import { FilterHeader, FilterNoMatchesFound, FilterOption } from "@/components/issues/issue-layouts/filters";
 // local imports
 import { ProjectNetworkIcon } from "../../project-network-icon";
 
@@ -27,7 +27,9 @@ export const FilterAccess = observer(function FilterAccess(props: Props) {
   const { t } = useTranslation();
 
   const appliedFiltersCount = appliedFilters?.length ?? 0;
-  const filteredOptions = NETWORK_CHOICES.filter((a) => a.i18n_label.includes(searchQuery.toLowerCase()));
+  const filteredOptions = NETWORK_CHOICES.filter((a) =>
+    t(a.i18n_label).toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <>
@@ -49,7 +51,7 @@ export const FilterAccess = observer(function FilterAccess(props: Props) {
               />
             ))
           ) : (
-            <p className="text-11 text-placeholder italic">No matches found</p>
+            <FilterNoMatchesFound />
           )}
         </div>
       )}

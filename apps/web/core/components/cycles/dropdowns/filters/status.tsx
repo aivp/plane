@@ -10,7 +10,7 @@ import { CYCLE_STATUS } from "@plane/constants";
 import { useTranslation } from "@plane/i18n";
 import type { TCycleGroups } from "@plane/types";
 // components
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import { FilterHeader, FilterNoMatchesFound, FilterOption } from "@/components/issues/issue-layouts/filters";
 // types
 // constants
 
@@ -27,7 +27,7 @@ export const FilterStatus = observer(function FilterStatus(props: Props) {
   //hooks
   const { t } = useTranslation();
   const appliedFiltersCount = appliedFilters?.length ?? 0;
-  const filteredOptions = CYCLE_STATUS.filter((p) => p.value.includes(searchQuery.toLowerCase()));
+  const filteredOptions = CYCLE_STATUS.filter((p) => t(p.i18n_title).toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <>
@@ -48,7 +48,7 @@ export const FilterStatus = observer(function FilterStatus(props: Props) {
               />
             ))
           ) : (
-            <p className="text-11 text-placeholder italic">No matches found</p>
+            <FilterNoMatchesFound />
           )}
         </div>
       )}

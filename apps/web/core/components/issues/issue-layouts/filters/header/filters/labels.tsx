@@ -10,7 +10,12 @@ import { observer } from "mobx-react";
 import type { IIssueLabel } from "@plane/types";
 // components
 import { Loader } from "@plane/ui";
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import {
+  FilterHeader,
+  FilterNoMatchesFound,
+  FilterOption,
+  FilterViewToggleText,
+} from "@/components/issues/issue-layouts/filters";
 
 // ui
 // types
@@ -80,12 +85,12 @@ export const FilterLabels = observer(function FilterLabels(props: Props) {
                     className="ml-8 text-11 font-medium text-accent-primary"
                     onClick={handleViewToggle}
                   >
-                    {itemsToRender === sortedOptions.length ? "View less" : "View all"}
+                    <FilterViewToggleText isExpanded={itemsToRender === sortedOptions.length} />
                   </button>
                 )}
               </>
             ) : (
-              <p className="text-11 text-placeholder italic">No matches found</p>
+              <FilterNoMatchesFound />
             )
           ) : (
             <Loader className="space-y-2">

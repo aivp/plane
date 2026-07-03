@@ -7,6 +7,7 @@
 import { observer } from "mobx-react";
 import { useParams } from "next/navigation";
 // plane imports
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspaceView } from "@plane/types";
 import { EIssuesStoreType } from "@plane/types";
@@ -34,6 +35,7 @@ export const CreateUpdateWorkspaceViewModal = observer(function CreateUpdateWork
   // store hooks
   const { createGlobalView, updateGlobalView } = useGlobalView();
   const { resetExpression } = useWorkItemFilters();
+  const { t } = useTranslation();
 
   const handleClose = () => {
     onClose();
@@ -52,16 +54,16 @@ export const CreateUpdateWorkspaceViewModal = observer(function CreateUpdateWork
       const res = await createGlobalView(workspaceSlug, payloadData);
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Success!",
-        message: "View created successfully.",
+        title: t("common.success"),
+        message: t("view.created.success"),
       });
       router.push(`/${workspaceSlug}/workspace-views/${res.id}`);
       handleClose();
     } catch (_error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: "View could not be created. Please try again.",
+        title: t("common.error.label"),
+        message: t("view.created.error"),
       });
     }
   };
@@ -81,16 +83,16 @@ export const CreateUpdateWorkspaceViewModal = observer(function CreateUpdateWork
         resetExpression(EIssuesStoreType.GLOBAL, data.id, res.rich_filters);
         setToast({
           type: TOAST_TYPE.SUCCESS,
-          title: "Success!",
-          message: "View updated successfully.",
+          title: t("common.success"),
+          message: t("view.updated.success"),
         });
         handleClose();
       }
     } catch (_error) {
       setToast({
         type: TOAST_TYPE.ERROR,
-        title: "Error!",
-        message: "View could not be updated. Please try again.",
+        title: t("common.error.label"),
+        message: t("view.updated.error"),
       });
     }
   };

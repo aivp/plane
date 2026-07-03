@@ -8,9 +8,15 @@ import React, { useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
 import { STATE_GROUPS } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { StateGroupIcon } from "@plane/propel/icons";
 // components
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import {
+  FilterHeader,
+  FilterNoMatchesFound,
+  FilterOption,
+  FilterViewToggleText,
+} from "@/components/issues/issue-layouts/filters";
 
 type Props = {
   appliedFilters: string[] | null;
@@ -20,6 +26,7 @@ type Props = {
 
 export const FilterStateGroup = observer(function FilterStateGroup(props: Props) {
   const { appliedFilters, handleUpdate, searchQuery } = props;
+  const { t } = useTranslation();
 
   const [itemsToRender, setItemsToRender] = useState(5);
   const [previewEnabled, setPreviewEnabled] = useState(true);
@@ -52,7 +59,7 @@ export const FilterStateGroup = observer(function FilterStateGroup(props: Props)
                   isChecked={appliedFilters?.includes(stateGroup.key) ? true : false}
                   onClick={() => handleUpdate(stateGroup.key)}
                   icon={<StateGroupIcon stateGroup={stateGroup.key} />}
-                  title={stateGroup.label}
+                  title={t(`workspace_projects.state.${stateGroup.key}`)}
                 />
               ))}
               {filteredOptions.length > 5 && (
@@ -61,12 +68,12 @@ export const FilterStateGroup = observer(function FilterStateGroup(props: Props)
                   className="ml-8 text-11 font-medium text-accent-primary"
                   onClick={handleViewToggle}
                 >
-                  {itemsToRender === filteredOptions.length ? "View less" : "View all"}
+                  <FilterViewToggleText isExpanded={itemsToRender === filteredOptions.length} />
                 </button>
               )}
             </>
           ) : (
-            <p className="text-11 text-placeholder italic">No matches found</p>
+            <FilterNoMatchesFound />
           )}
         </div>
       )}

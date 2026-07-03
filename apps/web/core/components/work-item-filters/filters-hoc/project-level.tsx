@@ -9,6 +9,7 @@ import { isEqual, cloneDeep } from "lodash-es";
 import { observer } from "mobx-react";
 // plane imports
 import { EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { setToast, TOAST_TYPE } from "@plane/propel/toast";
 import type { IProjectView, TWorkItemFilterExpression } from "@plane/types";
 import { EUserProjectRoles, EViewAccess } from "@plane/types";
@@ -47,6 +48,7 @@ export const ProjectLevelWorkItemFiltersHOC = observer(function ProjectLevelWork
   const { getViewById, updateView } = useProjectView();
   const { data: currentUser } = useUser();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
   const { getProjectCycleIds } = useCycle();
   const { getProjectLabelIds } = useLabel();
   const {
@@ -107,12 +109,12 @@ export const ProjectLevelWorkItemFiltersHOC = observer(function ProjectLevelWork
 
   const getDefaultViewDetailPayload: () => Partial<IProjectView> = useCallback(
     () => ({
-      name: viewDetails ? `${viewDetails?.name} 2` : "Untitled",
+      name: viewDetails ? `${viewDetails?.name} 2` : t("view.untitled"),
       description: viewDetails ? viewDetails.description : "",
       logo_props: viewDetails ? viewDetails.logo_props : undefined,
       access: viewDetails ? viewDetails.access : EViewAccess.PUBLIC,
     }),
-    [viewDetails]
+    [viewDetails, t]
   );
 
   const getViewFilterPayload: (filterExpression: TWorkItemFilterExpression) => Partial<IProjectView> = useCallback(
@@ -140,8 +142,8 @@ export const ProjectLevelWorkItemFiltersHOC = observer(function ProjectLevelWork
       if (!viewDetails) {
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "We couldn't find the view",
-          message: "The view you're trying to update doesn't exist.",
+          title: t("view.not_found.title"),
+          message: t("view.not_found.message"),
         });
 
         return;
@@ -153,19 +155,19 @@ export const ProjectLevelWorkItemFiltersHOC = observer(function ProjectLevelWork
         .then(() => {
           setToast({
             type: TOAST_TYPE.SUCCESS,
-            title: "Success!",
-            message: "Your view has been updated successfully.",
+            title: t("common.success"),
+            message: t("view.updated.success"),
           });
         })
         .catch(() => {
           setToast({
             type: TOAST_TYPE.ERROR,
-            title: "Error!",
-            message: "Your view could not be updated. Please try again.",
+            title: t("common.error.label"),
+            message: t("view.updated.error"),
           });
         });
     },
-    [viewDetails, updateView, workspaceSlug, projectId, getViewFilterPayload]
+    [viewDetails, updateView, workspaceSlug, projectId, getViewFilterPayload, t]
   );
 
   const saveViewOptions = useMemo(

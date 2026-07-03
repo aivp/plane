@@ -5,6 +5,22 @@
     "otherwise_try_refreshing_the_page_occasionally_or_visit_our": "Sinon, essayez de rafraîchir la page de temps en temps ou visitez notre",
     "status_page": "page de statut"
   },
+  "date_filters": {
+    "1_week_from_now": "1 week from now",
+    "2_weeks_from_now": "2 weeks from now",
+    "1_month_from_now": "1 month from now",
+    "2_months_from_now": "2 months from now",
+    "1_week_ago": "1 week ago",
+    "2_weeks_ago": "2 weeks ago",
+    "1_month_ago": "1 month ago",
+    "before": "before",
+    "after": "after",
+    "range": "range",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days"
+  },
   "submit": "Valider",
   "cancel": "Annuler",
   "loading": "Chargement",
@@ -717,7 +733,17 @@
     "developer": "Developer",
     "work_structure": "Work structure",
     "execution": "Execution",
-    "administration": "Administration"
+    "administration": "Administration",
+    "created_date": "Created date",
+    "mention": "Mention",
+    "all_filters_applied": "All filters applied",
+    "view_all": "View all",
+    "view_less": "View less",
+    "custom": "Custom",
+    "sub_group_by": "Sub-group by",
+    "access_label": "Access",
+    "status": "Status",
+    "cycle_status": "Cycle status"
   },
   "chart": {
     "x_axis": "Axe X",
@@ -779,7 +805,32 @@
       "label": "Créer une vue"
     },
     "update": {
-      "label": "Mettre à jour la vue"
+      "label": "Mettre à jour la vue",
+      "view_label": "Update view"
+    },
+    "untitled": "Untitled",
+    "save_as": "Save as",
+    "save_view": "Save view",
+    "copy_link": {
+      "success": "View link copied to clipboard."
+    },
+    "created": {
+      "success": "View created successfully.",
+      "error": "View could not be created. Please try again."
+    },
+    "updated": {
+      "success": "View updated successfully.",
+      "error": "View could not be updated. Please try again."
+    },
+    "deleted": {
+      "success": "View deleted successfully.",
+      "error": "View could not be deleted. Please try again."
+    },
+    "not_found": {
+      "title": "We couldn't find the view",
+      "message": "The view you're trying to update doesn't exist.",
+      "description": "The view you are looking for does not exist or you don't have permission to view it.",
+      "go_to_all_work_items": "Go to All work items"
     }
   },
   "role_details": {

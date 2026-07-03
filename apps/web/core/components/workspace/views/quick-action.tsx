@@ -8,6 +8,7 @@ import { useState } from "react";
 import { observer } from "mobx-react";
 // plane imports
 import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { IWorkspaceView } from "@plane/types";
 import { CustomMenu } from "@plane/ui";
@@ -33,6 +34,7 @@ export const WorkspaceViewQuickActions = observer(function WorkspaceViewQuickAct
   // store hooks
   const { data } = useUser();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
   // auth
   const isOwner = view?.owned_by === data?.id;
   const isAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
@@ -42,8 +44,8 @@ export const WorkspaceViewQuickActions = observer(function WorkspaceViewQuickAct
     await copyUrlToClipboard(viewLink);
     setToast({
       type: TOAST_TYPE.SUCCESS,
-      title: "Link Copied!",
-      message: "View link copied to clipboard.",
+      title: t("common.link_copied"),
+      message: t("view.copy_link.success"),
     });
   };
 

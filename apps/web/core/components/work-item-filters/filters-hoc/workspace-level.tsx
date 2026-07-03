@@ -10,6 +10,7 @@ import { observer } from "mobx-react";
 import useSWR from "swr";
 // plane imports
 import { DEFAULT_GLOBAL_VIEWS_LIST, EUserPermissionsLevel } from "@plane/constants";
+import { useTranslation } from "@plane/i18n";
 import { setToast, TOAST_TYPE } from "@plane/propel/toast";
 import type { IWorkspaceView, TWorkItemFilterExpression } from "@plane/types";
 import { EUserProjectRoles, EViewAccess } from "@plane/types";
@@ -44,6 +45,7 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
   const { getViewDetailsById, updateGlobalView } = useGlobalView();
   const { data: currentUser } = useUser();
   const { allowPermissions } = useUserPermissions();
+  const { t } = useTranslation();
   const { joinedProjectIds, getProjectById } = useProject();
   const { cycleMap, fetchWorkspaceCycles } = useCycle();
   const {
@@ -127,11 +129,11 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
 
   const getDefaultViewDetailPayload: () => Partial<IWorkspaceView> = useCallback(
     () => ({
-      name: viewDetails ? `${viewDetails?.name} 2` : "Untitled",
+      name: viewDetails ? `${viewDetails?.name} 2` : t("view.untitled"),
       description: viewDetails ? viewDetails.description : "",
       access: viewDetails ? viewDetails.access : EViewAccess.PUBLIC,
     }),
-    [viewDetails]
+    [viewDetails, t]
   );
 
   const getViewFilterPayload: (filterExpression: TWorkItemFilterExpression) => Partial<IWorkspaceView> = useCallback(
@@ -159,8 +161,8 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
       if (!viewDetails) {
         setToast({
           type: TOAST_TYPE.ERROR,
-          title: "We couldn't find the view",
-          message: "The view you're trying to update doesn't exist.",
+          title: t("view.not_found.title"),
+          message: t("view.not_found.message"),
         });
 
         return;
@@ -178,19 +180,19 @@ export const WorkspaceLevelWorkItemFiltersHOC = observer(function WorkspaceLevel
         .then(() => {
           setToast({
             type: TOAST_TYPE.SUCCESS,
-            title: "Success!",
-            message: "Your view has been updated successfully.",
+            title: t("common.success"),
+            message: t("view.updated.success"),
           });
         })
         .catch(() => {
           setToast({
             type: TOAST_TYPE.ERROR,
-            title: "Error!",
-            message: "Your view could not be updated. Please try again.",
+            title: t("common.error.label"),
+            message: t("view.updated.error"),
           });
         });
     },
-    [viewDetails, updateGlobalView, workspaceSlug, getViewFilterPayload]
+    [viewDetails, updateGlobalView, workspaceSlug, getViewFilterPayload, t]
   );
 
   const saveViewOptions = useMemo(

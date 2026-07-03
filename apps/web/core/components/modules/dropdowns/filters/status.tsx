@@ -11,7 +11,7 @@ import { useTranslation } from "@plane/i18n";
 import { ModuleStatusIcon } from "@plane/propel/icons";
 import type { TModuleStatus } from "@plane/types";
 // components
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import { FilterHeader, FilterNoMatchesFound, FilterOption } from "@/components/issues/issue-layouts/filters";
 
 type Props = {
   appliedFilters: TModuleStatus[] | null;
@@ -25,7 +25,9 @@ export const FilterStatus = observer(function FilterStatus(props: Props) {
   const [previewEnabled, setPreviewEnabled] = useState(true);
   const { t } = useTranslation();
 
-  const filteredOptions = MODULE_STATUS.filter((p) => p.value.includes(searchQuery.toLowerCase()));
+  const filteredOptions = MODULE_STATUS.filter((p) =>
+    t(p.i18n_label).toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const appliedFiltersCount = appliedFilters?.length ?? 0;
 
   return (
@@ -48,7 +50,7 @@ export const FilterStatus = observer(function FilterStatus(props: Props) {
               />
             ))
           ) : (
-            <p className="text-11 text-placeholder italic">No matches found</p>
+            <FilterNoMatchesFound />
           )}
         </div>
       )}

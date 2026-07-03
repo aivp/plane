@@ -11,7 +11,12 @@ import { observer } from "mobx-react";
 import { Logo } from "@plane/propel/emoji-icon-picker";
 import { Loader } from "@plane/ui";
 // components
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import {
+  FilterHeader,
+  FilterNoMatchesFound,
+  FilterOption,
+  FilterViewToggleText,
+} from "@/components/issues/issue-layouts/filters";
 // hooks
 import { useProject } from "@/hooks/store/use-project";
 
@@ -81,12 +86,12 @@ export const FilterProjects = observer(function FilterProjects(props: Props) {
                     className="ml-8 text-11 font-medium text-accent-primary"
                     onClick={handleViewToggle}
                   >
-                    {itemsToRender === sortedOptions.length ? "View less" : "View all"}
+                    <FilterViewToggleText isExpanded={itemsToRender === sortedOptions.length} />
                   </button>
                 )}
               </>
             ) : (
-              <p className="text-11 text-placeholder italic">No matches found</p>
+              <FilterNoMatchesFound />
             )
           ) : (
             <Loader className="space-y-2">

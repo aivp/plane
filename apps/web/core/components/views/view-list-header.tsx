@@ -9,7 +9,9 @@ import { observer } from "mobx-react";
 // icons
 import { ListFilter } from "lucide-react";
 import { useOutsideClickDetector } from "@plane/hooks";
+import { useTranslation } from "@plane/i18n";
 import { SearchIcon, CloseIcon } from "@plane/propel/icons";
+import { IconButton } from "@plane/propel/icon-button";
 // plane helpers
 // helpers
 import { cn } from "@plane/utils";
@@ -19,7 +21,6 @@ import { useProjectView } from "@/hooks/store/use-project-view";
 import { FiltersDropdown } from "../issues/issue-layouts/filters";
 import { ViewFiltersSelection } from "./filters/filter-selection";
 import { ViewOrderByDropdown } from "./filters/order-by";
-import { IconButton } from "@plane/propel/icon-button";
 
 export const ViewListHeader = observer(function ViewListHeader() {
   // states
@@ -31,6 +32,7 @@ export const ViewListHeader = observer(function ViewListHeader() {
   const {
     project: { projectMemberIds },
   } = useMember();
+  const { t } = useTranslation();
 
   // handlers
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -80,7 +82,7 @@ export const ViewListHeader = observer(function ViewListHeader() {
           <input
             ref={inputRef}
             className="w-full max-w-[234px] border-none bg-transparent text-13 text-primary placeholder:text-placeholder focus:outline-none"
-            placeholder="Search"
+            placeholder={t("common.search.label")}
             value={filters?.searchQuery}
             onChange={(e) => updateFilters("searchQuery", e.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -110,7 +112,7 @@ export const ViewListHeader = observer(function ViewListHeader() {
         />
         <FiltersDropdown
           icon={<ListFilter className="h-3 w-3" />}
-          title="Filters"
+          title={t("common.filters")}
           placement="bottom-end"
           isFiltersApplied={false}
         >

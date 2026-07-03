@@ -12,7 +12,12 @@ import { CycleGroupIcon } from "@plane/propel/icons";
 import type { TCycleGroups } from "@plane/types";
 // components
 import { Loader } from "@plane/ui";
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import {
+  FilterHeader,
+  FilterNoMatchesFound,
+  FilterOption,
+  FilterViewToggleText,
+} from "@/components/issues/issue-layouts/filters";
 import { useCycle } from "@/hooks/store/use-cycle";
 // ui
 // types
@@ -90,12 +95,12 @@ export const FilterCycle = observer(function FilterCycle(props: Props) {
                     className="ml-8 text-11 font-medium text-accent-primary"
                     onClick={handleViewToggle}
                   >
-                    {itemsToRender === sortedOptions.length ? "View less" : "View all"}
+                    <FilterViewToggleText isExpanded={itemsToRender === sortedOptions.length} />
                   </button>
                 )}
               </>
             ) : (
-              <p className="text-11 text-placeholder italic">No matches found</p>
+              <FilterNoMatchesFound />
             )
           ) : (
             <Loader className="space-y-2">

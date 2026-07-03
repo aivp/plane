@@ -34,8 +34,8 @@ export const DefaultWorkspaceViewQuickActions = observer(function DefaultWorkspa
     copyUrlToClipboard(viewLink).then(() => {
       setToast({
         type: TOAST_TYPE.SUCCESS,
-        title: "Link Copied!",
-        message: "View link copied to clipboard.",
+        title: t("common.link_copied"),
+        message: t("view.copy_link.success"),
       });
     });
   const handleOpenInNewTab = () => window.open(`/${viewLink}`, "_blank");

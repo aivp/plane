@@ -13,7 +13,7 @@ import { useTranslation } from "@plane/i18n";
 import { PriorityIcon } from "@plane/propel/icons";
 
 // components
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import { FilterHeader, FilterNoMatchesFound, FilterOption } from "@/components/issues/issue-layouts/filters";
 type Props = {
   appliedFilters: string[] | null;
   handleUpdate: (val: string) => void;
@@ -28,7 +28,12 @@ export const FilterPriority = observer(function FilterPriority(props: Props) {
 
   const appliedFiltersCount = appliedFilters?.length ?? 0;
 
-  const filteredOptions = ISSUE_PRIORITIES.filter((p) => p.key.includes(searchQuery.toLowerCase()));
+  const getPriorityLabel = (priorityKey: string) =>
+    priorityKey === "none" ? t("common.none") : t(`issue.priority.${priorityKey}`);
+
+  const filteredOptions = ISSUE_PRIORITIES.filter((p) =>
+    getPriorityLabel(p.key).toLowerCase().includes(searchQuery.toLowerCase())
+  );
   return (
     <>
       <FilterHeader
@@ -45,11 +50,11 @@ export const FilterPriority = observer(function FilterPriority(props: Props) {
                 isChecked={appliedFilters?.includes(priority.key) ? true : false}
                 onClick={() => handleUpdate(priority.key)}
                 icon={<PriorityIcon priority={priority.key} className="h-3.5 w-3.5" />}
-                title={priority.title}
+                title={getPriorityLabel(priority.key)}
               />
             ))
           ) : (
-            <p className="text-11 text-placeholder italic">{t("common.search.no_matches_found")}</p>
+            <FilterNoMatchesFound />
           )}
         </div>
       )}

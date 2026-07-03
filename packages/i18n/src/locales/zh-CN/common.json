@@ -5,6 +5,22 @@
     "otherwise_try_refreshing_the_page_occasionally_or_visit_our": "否则，请偶尔刷新页面或访问我们的",
     "status_page": "状态页面"
   },
+  "date_filters": {
+    "1_week_from_now": "从现在起 1 周后",
+    "2_weeks_from_now": "从现在起 2 周后",
+    "1_month_from_now": "从现在起 1 个月后",
+    "2_months_from_now": "从现在起 2 个月后",
+    "1_week_ago": "1 周前",
+    "2_weeks_ago": "2 周前",
+    "1_month_ago": "1 个月前",
+    "before": "之前",
+    "after": "之后",
+    "range": "范围",
+    "today": "今天",
+    "yesterday": "昨天",
+    "last_7_days": "最近 7 天",
+    "last_30_days": "最近 30 天"
+  },
   "submit": "提交",
   "cancel": "取消",
   "loading": "加载中",
@@ -439,6 +455,8 @@
     "assignees": "负责人",
     "assignee": "负责人",
     "created_by": "创建者",
+    "created_date": "创建日期",
+    "mention": "提及",
     "none": "无",
     "link": "链接",
     "estimates": "估算",
@@ -448,6 +466,7 @@
     "completed_at": "完成于",
     "layout": "布局",
     "filters": "筛选",
+    "all_filters_applied": "所有筛选条件已应用",
     "display": "显示",
     "load_more": "加载更多",
     "activity": "活动",
@@ -460,6 +479,7 @@
       "message": "发生错误。请重试。"
     },
     "group_by": "分组方式",
+    "sub_group_by": "子分组方式",
     "epic": "史诗",
     "epics": "史诗",
     "work_item": "工作项",
@@ -531,6 +551,9 @@
     "updates": "更新",
     "additional_updates": "额外更新",
     "clear_all": "清除全部",
+    "view_all": "查看全部",
+    "view_less": "收起",
+    "custom": "自定义",
     "copied": "已复制！",
     "link_copied": "链接已复制！",
     "link_copied_to_clipboard": "链接已复制到剪贴板",
@@ -717,7 +740,10 @@
     "developer": "Developer",
     "work_structure": "Work structure",
     "execution": "Execution",
-    "administration": "Administration"
+    "administration": "Administration",
+    "access_label": "访问权限",
+    "status": "状态",
+    "cycle_status": "周期状态"
   },
   "chart": {
     "x_axis": "X轴",
@@ -775,12 +801,37 @@
   },
   "view": {
     "label": "{count, plural, one {视图} other {视图}}",
+    "save_as": "另存为",
+    "save_view": "保存视图",
     "create": {
       "label": "创建视图"
     },
     "update": {
-      "label": "更新视图"
-    }
+      "label": "更新视图",
+      "view_label": "更新视图"
+    },
+    "copy_link": {
+      "success": "视图链接已复制到剪贴板。"
+    },
+    "created": {
+      "success": "视图创建成功。",
+      "error": "无法创建视图。请重试。"
+    },
+    "updated": {
+      "success": "视图更新成功。",
+      "error": "无法更新视图。请重试。"
+    },
+    "deleted": {
+      "success": "视图删除成功。",
+      "error": "无法删除视图。请重试。"
+    },
+    "not_found": {
+      "title": "找不到该视图",
+      "message": "你要更新的视图不存在。",
+      "description": "你要查找的视图不存在，或你没有查看权限。",
+      "go_to_all_work_items": "前往所有工作项"
+    },
+    "untitled": "未命名"
   },
   "role_details": {
     "guest": {

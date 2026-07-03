@@ -8,10 +8,16 @@ import { useMemo, useState } from "react";
 import { sortBy } from "lodash-es";
 import { observer } from "mobx-react";
 // plane ui
+import { useTranslation } from "@plane/i18n";
 import { Avatar, Loader } from "@plane/ui";
 // components
 import { getFileURL } from "@plane/utils";
-import { FilterHeader, FilterOption } from "@/components/issues/issue-layouts/filters";
+import {
+  FilterHeader,
+  FilterNoMatchesFound,
+  FilterOption,
+  FilterViewToggleText,
+} from "@/components/issues/issue-layouts/filters";
 // helpers
 // hooks
 import { useMember } from "@/hooks/store/use-member";
@@ -32,6 +38,7 @@ export const FilterCreatedBy = observer(function FilterCreatedBy(props: Props) {
   // store hooks
   const { getUserDetails } = useMember();
   const { data: currentUser } = useUser();
+  const { t } = useTranslation();
 
   const sortedOptions = useMemo(() => {
     const filteredOptions = (memberIds || []).filter((memberId) =>
@@ -77,7 +84,7 @@ export const FilterCreatedBy = observer(function FilterCreatedBy(props: Props) {
                       isChecked={appliedFilters?.includes(member.id) ? true : false}
                       onClick={() => handleUpdate(member.id)}
                       icon={<Avatar name={member.display_name} src={getFileURL(member.avatar_url)} size="md" />}
-                      title={currentUser?.id === member.id ? "You" : member?.display_name}
+                      title={currentUser?.id === member.id ? t("common.you") : member?.display_name}
                     />
                   );
                 })}
@@ -87,12 +94,12 @@ export const FilterCreatedBy = observer(function FilterCreatedBy(props: Props) {
                     className="ml-8 text-11 font-medium text-accent-primary"
                     onClick={handleViewToggle}
                   >
-                    {itemsToRender === sortedOptions.length ? "View less" : "View all"}
+                    <FilterViewToggleText isExpanded={itemsToRender === sortedOptions.length} />
                   </button>
                 )}
               </>
             ) : (
-              <p className="text-11 text-placeholder italic">No matches found</p>
+              <FilterNoMatchesFound />
             )
           ) : (
             <Loader className="space-y-2">
