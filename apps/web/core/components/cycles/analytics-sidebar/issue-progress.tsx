@@ -71,7 +71,10 @@ export const CycleAnalyticsProgress = observer(function CycleAnalyticsProgress(p
   // derived values
   const cycleFilter = getFilter(EIssuesStoreType.CYCLE, cycleId);
   const selectedAssignees = cycleFilter?.findFirstConditionByPropertyAndOperator("assignee_id", "in");
-  const selectedLabels = cycleFilter?.findFirstConditionByPropertyAndOperator("label_id", "in");
+  const selectedLabels = cycleFilter?.allConditionsForDisplay.find(
+    (condition) =>
+      condition.property === "label_id" && (condition.operator === "in" || condition.operator === "all")
+  );
   const selectedStateGroups = cycleFilter?.findFirstConditionByPropertyAndOperator("state_group", "in");
   const cycleDetails = validateCycleSnapshot(getCycleById(cycleId));
   const plotType: TCyclePlotType = getPlotTypeByCycleId(cycleId);

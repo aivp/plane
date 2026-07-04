@@ -23,6 +23,7 @@ export const CORE_EQUALITY_OPERATOR = {
  */
 export const CORE_COLLECTION_OPERATOR = {
   IN: "in",
+  ALL: "all",
 } as const;
 
 /**
@@ -35,7 +36,11 @@ export const CORE_COMPARISON_OPERATOR = {
 /**
  * Core operators that support multiple values
  */
-export const CORE_MULTI_VALUE_OPERATORS = [CORE_COLLECTION_OPERATOR.IN, CORE_COMPARISON_OPERATOR.RANGE] as const;
+export const CORE_MULTI_VALUE_OPERATORS = [
+  CORE_COLLECTION_OPERATOR.IN,
+  CORE_COLLECTION_OPERATOR.ALL,
+  CORE_COMPARISON_OPERATOR.RANGE,
+] as const;
 
 /**
  * All core operators

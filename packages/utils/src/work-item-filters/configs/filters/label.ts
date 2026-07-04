@@ -62,5 +62,8 @@ export const getLabelFilterConfig =
         createOperatorConfigEntry(COLLECTION_OPERATOR.IN, params, (updatedParams) =>
           getLabelMultiSelectConfig(updatedParams, EQUALITY_OPERATOR.EXACT)
         ),
+        createOperatorConfigEntry(COLLECTION_OPERATOR.ALL, params, (updatedParams) =>
+          getLabelMultiSelectConfig(updatedParams, EQUALITY_OPERATOR.EXACT)
+        ),
       ]),
     });

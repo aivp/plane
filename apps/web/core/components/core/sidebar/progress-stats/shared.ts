@@ -34,7 +34,8 @@ export const createFilterUpdateHandler =
   <T extends string>(
     property: TWorkItemFilterProperty,
     selectedValues: T[],
-    handleFiltersUpdate: (condition: TWorkItemFilterCondition) => void
+    handleFiltersUpdate: (condition: TWorkItemFilterCondition) => void,
+    operator: TWorkItemFilterCondition["operator"] = "in"
   ) =>
   (value: T | undefined) => {
     const updatedValues = value ? [...selectedValues] : [];
@@ -47,5 +48,5 @@ export const createFilterUpdateHandler =
       }
     }
 
-    handleFiltersUpdate({ property, operator: "in", value: updatedValues });
+    handleFiltersUpdate({ property, operator, value: updatedValues });
   };

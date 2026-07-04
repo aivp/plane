@@ -21,6 +21,9 @@ export type TCoreExactOperatorConfigs =
 // ----------------------------- IN Operator -----------------------------
 export type TCoreInOperatorConfigs = TMultiSelectFilterFieldConfig<TFilterValue>;
 
+// ----------------------------- ALL Operator -----------------------------
+export type TCoreAllOperatorConfigs = TMultiSelectFilterFieldConfig<TFilterValue>;
+
 // ----------------------------- RANGE Operator -----------------------------
 export type TCoreRangeOperatorConfigs = TDateRangeFilterFieldConfig<TFilterValue>;
 
@@ -28,5 +31,6 @@ export type TCoreRangeOperatorConfigs = TDateRangeFilterFieldConfig<TFilterValue
 export type TCoreOperatorSpecificConfigs = {
   [CORE_EQUALITY_OPERATOR.EXACT]: TCoreExactOperatorConfigs;
   [CORE_COLLECTION_OPERATOR.IN]: TCoreInOperatorConfigs;
+  [CORE_COLLECTION_OPERATOR.ALL]: TCoreAllOperatorConfigs;
   [CORE_COMPARISON_OPERATOR.RANGE]: TCoreRangeOperatorConfigs;
 };

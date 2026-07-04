@@ -110,7 +110,12 @@ export const ModuleProgressStats = observer(function ModuleProgressStats(props: 
     selectedAssigneeIds,
     handleFiltersUpdate
   );
-  const handleLabelFiltersUpdate = createFilterUpdateHandler("label_id", selectedLabelIds, handleFiltersUpdate);
+  const handleLabelFiltersUpdate = createFilterUpdateHandler(
+    "label_id",
+    selectedLabelIds,
+    handleFiltersUpdate,
+    selectedFilters?.labels?.operator
+  );
   const handleStateGroupFiltersUpdate = createFilterUpdateHandler(
     "state_group",
     selectedStateGroups,

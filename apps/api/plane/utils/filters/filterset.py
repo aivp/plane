@@ -5,10 +5,10 @@
 import copy
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Count, Q
 from django_filters import FilterSet, filters
 
-from plane.db.models import Issue
+from plane.db.models import Issue, IssueLabel
 
 
 class UUIDInFilter(filters.BaseInFilter, filters.UUIDFilter):
@@ -138,6 +138,7 @@ class IssueFilterSet(BaseFilterSet):
 
     label_id = filters.UUIDFilter(method="filter_label_id")
     label_id__in = UUIDInFilter(method="filter_label_id_in", lookup_expr="in")
+    label_id__all = UUIDInFilter(method="filter_label_id_all", lookup_expr="in")
 
     # Direct field lookups remain the same
     created_by_id = filters.UUIDFilter(field_name="created_by_id")
@@ -250,6 +251,22 @@ class IssueFilterSet(BaseFilterSet):
             label_issue__label_id__in=value,
             label_issue__deleted_at__isnull=True,
         )
+
+    def filter_label_id_all(self, queryset, name, value):
+        """Filter by work items containing all provided labels."""
+        label_ids = list(dict.fromkeys(value))
+        if not label_ids:
+            return Q()
+
+        issue_ids = (
+            IssueLabel.objects.filter(label_id__in=label_ids, deleted_at__isnull=True)
+            .values("issue_id")
+            .annotate(matched_label_count=Count("label_id", distinct=True))
+            .filter(matched_label_count=len(label_ids))
+            .values("issue_id")
+        )
+
+        return Q(pk__in=issue_ids)
 
     def filter_subscriber_id(self, queryset, name, value):
         """Filter by subscriber ID, excluding soft deleted users"""

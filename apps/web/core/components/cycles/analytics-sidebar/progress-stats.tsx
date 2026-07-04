@@ -112,7 +112,12 @@ export const CycleProgressStats = observer(function CycleProgressStats(props: TC
     selectedAssigneeIds,
     handleFiltersUpdate
   );
-  const handleLabelFiltersUpdate = createFilterUpdateHandler("label_id", selectedLabelIds, handleFiltersUpdate);
+  const handleLabelFiltersUpdate = createFilterUpdateHandler(
+    "label_id",
+    selectedLabelIds,
+    handleFiltersUpdate,
+    selectedFilters?.labels?.operator
+  );
   const handleStateGroupFiltersUpdate = createFilterUpdateHandler(
     "state_group",
     selectedStateGroups,

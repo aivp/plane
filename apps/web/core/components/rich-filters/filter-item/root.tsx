@@ -34,19 +34,42 @@ export interface IFilterItemProps<P extends TFilterProperty, E extends TExternal
   showTransition?: boolean;
 }
 
+type TOperatorOption = {
+  value: TAllAvailableOperatorsForDisplay;
+  content: string;
+  query: string;
+};
+
+const getUniqueOperatorOptions = (
+  options: TOperatorOption[] | undefined,
+  selectedOperator: TAllAvailableOperatorsForDisplay
+): TOperatorOption[] | undefined => {
+  if (!options) return undefined;
+
+  const uniqueOptions = new Map<string, TOperatorOption>();
+
+  for (const option of options) {
+    const currentOption = uniqueOptions.get(option.content);
+    if (!currentOption || option.value === selectedOperator) uniqueOptions.set(option.content, option);
+  }
+
+  return Array.from(uniqueOptions.values());
+};
+
 export const FilterItem = observer(function FilterItem<P extends TFilterProperty, E extends TExternalFilter>(
   props: IFilterItemProps<P, E>
 ) {
   const { condition, filter, isDisabled = false, showTransition = true } = props;
   // derived values
   const filterConfig = condition?.property ? filter.configManager.getConfigByProperty(condition.property) : undefined;
-  const operatorOptions = filterConfig
-    ?.getAllDisplayOperatorOptionsByValue(condition.value as TFilterValue)
-    .map((option) => ({
+  const operatorOptions = getUniqueOperatorOptions(
+    filterConfig?.getAllDisplayOperatorOptionsByValue(condition.value as TFilterValue).map((option) => ({
       value: option.value,
       content: option.label,
       query: option.label.toLowerCase(),
-    }));
+    })),
+    condition.operator
+  );
   const selectedOperatorFieldConfig = filterConfig?.getOperatorConfig(condition.operator);
   const selectedOperatorOption = filterConfig?.getDisplayOperatorByValue(
     condition.operator,
