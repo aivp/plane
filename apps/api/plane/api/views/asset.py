@@ -18,7 +18,7 @@ from drf_spectacular.utils import OpenApiExample, OpenApiRequest
 from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from plane.settings.storage import S3Storage
 from plane.utils.path_validator import sanitize_filename
-from plane.db.models import FileAsset, User, Workspace
+from plane.db.models import APIToken, FileAsset, ProjectMember, User, Workspace, WorkspaceMember
 from plane.api.views.base import BaseAPIView
 from plane.api.serializers import (
     UserAssetUploadSerializer,
@@ -334,7 +334,7 @@ class UserServerAssetEndpoint(BaseAPIView):
         )
 
         # Get the presigned URL
-        storage = S3Storage(request=request, is_server=True)
+        storage = S3Storage(request=request)
         # Generate a presigned URL to share an S3 object
         presigned_url = storage.generate_presigned_post(object_name=asset_key, file_type=type, file_size=size_limit)
         # Return the presigned URL
@@ -406,6 +406,25 @@ class GenericAssetEndpoint(BaseAPIView):
 
     use_read_replica = True
 
+    def has_asset_download_permission(self, request, workspace, asset):
+        api_token = APIToken.objects.select_related("workspace").filter(token=request.auth, is_active=True).first()
+
+        if api_token and api_token.is_service:
+            return api_token.workspace_id == workspace.id
+
+        if not WorkspaceMember.objects.filter(workspace=workspace, member=request.user, is_active=True).exists():
+            return False
+
+        if asset.project_id:
+            return ProjectMember.objects.filter(
+                workspace=workspace,
+                project_id=asset.project_id,
+                member=request.user,
+                is_active=True,
+            ).exists()
+
+        return True
+
     @asset_docs(
         operation_id="get_generic_asset",
         summary="Get presigned URL for asset download",
@@ -437,8 +456,14 @@ class GenericAssetEndpoint(BaseAPIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            if not self.has_asset_download_permission(request=request, workspace=workspace, asset=asset):
+                return Response(
+                    {"error": "You are not allowed to download this asset"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
             # Generate presigned URL for GET
-            storage = S3Storage(request=request, is_server=True)
+            storage = S3Storage(request=request)
             presigned_url = storage.generate_presigned_url(
                 object_name=asset.asset.name, filename=asset.attributes.get("name")
             )
@@ -562,7 +587,7 @@ class GenericAssetEndpoint(BaseAPIView):
         )
 
         # Get the presigned URL
-        storage = S3Storage(request=request, is_server=True)
+        storage = S3Storage(request=request)
         presigned_url = storage.generate_presigned_post(object_name=asset_key, file_type=type, file_size=size_limit)
 
         return Response(
