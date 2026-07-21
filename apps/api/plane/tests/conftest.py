@@ -3,11 +3,20 @@
 # See the LICENSE file for details.
 
 import pytest
+from django.core.cache import cache
 from rest_framework.test import APIClient
 from pytest_django.fixtures import django_db_setup
 
 from plane.db.models import User, Workspace, WorkspaceMember
 from plane.db.models.api import APIToken
+
+
+@pytest.fixture(autouse=True)
+def clear_test_cache():
+    """Prevent throttles and other cached state from leaking between tests."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture(scope="session")

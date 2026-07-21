@@ -17,14 +17,16 @@
     "check:lint": "turbo run check:lint",
     "check:format": "turbo run check:format",
     "check:types": "turbo run check:types",
-    "prepare": "husky"
+    "prepare": "husky",
+    "doctor": "npx react-doctor@latest"
   },
   "devDependencies": {
-    "husky": "9.1.7",
-    "lint-staged": "16.2.7",
-    "oxfmt": "0.35.0",
-    "oxlint": "1.51.0",
-    "turbo": "2.9.14"
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "react-doctor": "^0.4.2",
+    "turbo": "catalog:"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,cjs,mjs,cts,mts,json,css,md}": [

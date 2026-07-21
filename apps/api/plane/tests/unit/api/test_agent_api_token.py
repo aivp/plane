@@ -44,7 +44,12 @@ def test_agent_api_allows_personal_token_for_workspace_member(create_user, agent
 
 @pytest.mark.django_db
 def test_agent_api_rejects_personal_token_for_non_member(create_user, agent_workspace):
-    other_user = User.objects.create(email="agent-non-member@example.com", first_name="Agent", last_name="Non Member")
+    other_user = User.objects.create(
+        email="agent-non-member@example.com",
+        username="agent-non-member",
+        first_name="Agent",
+        last_name="Non Member",
+    )
     token = APIToken.objects.create(
         user=other_user,
         is_service=False,

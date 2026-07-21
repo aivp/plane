@@ -7,11 +7,16 @@
 import { useEffect, useState } from "react";
 import useSWR, { mutate } from "swr";
 import { Bot, Copy, ExternalLink, GitBranch, Github, RefreshCw, XCircle } from "lucide-react";
-import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import {
+  EUserPermissions,
+  EUserPermissionsLevel,
+  GITHUB_MANAGED_REPOSITORIES,
+  GITHUB_REPOSITORY_BRANCHES,
+  ISSUE_AGENT_TASK,
+} from "@plane/constants";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssueAgentTaskStatus } from "@plane/types";
-import { GITHUB_MANAGED_REPOSITORIES, GITHUB_REPOSITORY_BRANCHES, ISSUE_AGENT_TASK } from "@/constants/fetch-keys";
 import { GithubRepositoryService } from "@/services/integrations";
 import { IssueAgentTaskService } from "@/services/issue";
 import { SidebarPropertyListItem } from "@/components/common/layout/sidebar/property-list-item";

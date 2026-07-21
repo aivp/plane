@@ -25,7 +25,7 @@ export function IssueAgentTaskBadge({ task, compact = false }: { task: TIssueAge
   return (
     <span
       title={[meta.label, repositoryName, task.base_branch, detail].filter(Boolean).join(" · ")}
-      className={`inline-flex h-5 max-w-full items-center gap-1 rounded border border-subtle bg-surface-1 px-1.5 text-caption ${meta.className}`}
+      className={`text-caption inline-flex h-5 max-w-full items-center gap-1 rounded border border-subtle bg-surface-1 px-1.5 ${meta.className}`}
     >
       <Icon className={`size-3 shrink-0 ${task.status === "running" ? "animate-spin" : ""}`} />
       {!compact && <span className="truncate">{meta.label}</span>}

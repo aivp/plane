@@ -8,7 +8,12 @@ import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
 import useSWR, { mutate } from "swr";
 import { CheckCircle2, Loader2, Pencil, RefreshCw, Save, Trash2, X, XCircle } from "lucide-react";
-import { EUserPermissions, EUserPermissionsLevel } from "@plane/constants";
+import {
+  EUserPermissions,
+  EUserPermissionsLevel,
+  GITHUB_CREDENTIALS,
+  GITHUB_MANAGED_REPOSITORIES,
+} from "@plane/constants";
 import { Button } from "@plane/propel/button";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TGithubCredentialProfile, TGithubManagedRepository } from "@plane/types";
@@ -17,10 +22,6 @@ import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view
 import { PageHead } from "@/components/core/page-title";
 import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 import { SettingsHeading } from "@/components/settings/heading";
-import {
-  GITHUB_CREDENTIALS,
-  GITHUB_MANAGED_REPOSITORIES,
-} from "@/constants/fetch-keys";
 import { useUserPermissions } from "@/hooks/store/user";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { GithubRepositoryService } from "@/services/integrations";
@@ -51,26 +52,21 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
   const [editingRepositoryCredentialId, setEditingRepositoryCredentialId] = useState("");
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const { data: credentials = [] } = useSWR(
-    isAdmin ? GITHUB_CREDENTIALS(workspaceSlug) : null,
-    () => githubRepositoryService.listCredentials(workspaceSlug)
+  const { data: credentials = [] } = useSWR(isAdmin ? GITHUB_CREDENTIALS(workspaceSlug) : null, () =>
+    githubRepositoryService.listCredentials(workspaceSlug)
   );
-  const { data: repositories = [] } = useSWR(
-    isAdmin ? GITHUB_MANAGED_REPOSITORIES(workspaceSlug) : null,
-    () => githubRepositoryService.listRepositories(workspaceSlug)
+  const { data: repositories = [] } = useSWR(isAdmin ? GITHUB_MANAGED_REPOSITORIES(workspaceSlug) : null, () =>
+    githubRepositoryService.listRepositories(workspaceSlug)
   );
 
-  const latestSync = useMemo(
-    () => {
-      const syncedAtValues = repositories
-        .map((repository) => repository.last_synced_at)
-        .filter((value): value is string => Boolean(value))
-        .sort();
+  const latestSync = useMemo(() => {
+    const syncedAtValues = repositories
+      .map((repository) => repository.last_synced_at)
+      .filter((value): value is string => Boolean(value))
+      .sort();
 
-      return syncedAtValues.length > 0 ? syncedAtValues[syncedAtValues.length - 1] : undefined;
-    },
-    [repositories]
-  );
+    return syncedAtValues.length > 0 ? syncedAtValues[syncedAtValues.length - 1] : undefined;
+  }, [repositories]);
   const githubAppRepositoryCount = repositories.filter((repository) => repository.source === "github_app").length;
 
   const showError = (message: string) =>
@@ -243,7 +239,9 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
 
     setLoadingAction("sync-all");
     try {
-      await Promise.all(repositories.map((repository) => githubRepositoryService.syncBranches(workspaceSlug, repository.id)));
+      await Promise.all(
+        repositories.map((repository) => githubRepositoryService.syncBranches(workspaceSlug, repository.id))
+      );
       await mutate(GITHUB_MANAGED_REPOSITORIES(workspaceSlug));
       setToast({ type: TOAST_TYPE.SUCCESS, title: "刷新完成", message: "仓库分支信息已更新。" });
     } catch (error: any) {
@@ -310,7 +308,10 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
               <EmptyRow text="还没有凭证档案。" />
             ) : (
               credentials.map((credential) => (
-                <div key={credential.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 border-b border-subtle px-3 py-2 last:border-b-0">
+                <div
+                  key={credential.id}
+                  className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 border-b border-subtle px-3 py-2 last:border-b-0"
+                >
                   <div className="min-w-0">
                     {editingCredentialId === credential.id ? (
                       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
@@ -329,7 +330,9 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
                     ) : (
                       <>
                         <div className="truncate text-body-xs-medium">{credential.name}</div>
-                        <div className="text-caption text-secondary">Token 尾号 {credential.token_last_four || "无"}</div>
+                        <div className="text-caption text-secondary">
+                          Token 尾号 {credential.token_last_four || "无"}
+                        </div>
                       </>
                     )}
                   </div>
@@ -365,7 +368,11 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
                     }
                     disabled={loadingAction === `delete-credential-${credential.id}`}
                   >
-                    {editingCredentialId === credential.id ? <X className="size-3.5" /> : <Pencil className="size-3.5" />}
+                    {editingCredentialId === credential.id ? (
+                      <X className="size-3.5" />
+                    ) : (
+                      <Pencil className="size-3.5" />
+                    )}
                   </Button>
                   {editingCredentialId !== credential.id && (
                     <Button
@@ -391,7 +398,11 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
           <div className="grid grid-cols-1 gap-2 md:grid-cols-[1fr_1fr_1.4fr_1.2fr_auto]">
             <Input value={repositoryOwner} onChange={(e) => setRepositoryOwner(e.target.value)} placeholder="Owner" />
             <Input value={repositoryName} onChange={(e) => setRepositoryName(e.target.value)} placeholder="仓库名" />
-            <Input value={repositoryUrl} onChange={(e) => setRepositoryUrl(e.target.value)} placeholder="https://github.com/owner/repo" />
+            <Input
+              value={repositoryUrl}
+              onChange={(e) => setRepositoryUrl(e.target.value)}
+              placeholder="https://github.com/owner/repo"
+            />
             <select
               className="h-9 rounded border border-subtle bg-surface-1 px-3 text-body-xs-regular"
               value={repositoryCredentialId}
@@ -418,13 +429,19 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
               <EmptyRow text="还没有仓库。请先安装 GitHub App 或新增手动仓库。" />
             ) : (
               repositories.map((repository) => (
-                <div key={repository.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 border-b border-subtle px-3 py-2 last:border-b-0">
+                <div
+                  key={repository.id}
+                  className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-3 border-b border-subtle px-3 py-2 last:border-b-0"
+                >
                   <div className="min-w-0">
                     <div className="truncate text-body-xs-medium">{repository.full_name}</div>
-                    <div className="truncate text-caption text-secondary">
-                      {repository.source} · 默认 {repository.default_branch || "未知"} · {repository.branch_count ?? 0} 个分支
+                    <div className="text-caption truncate text-secondary">
+                      {repository.source} · 默认 {repository.default_branch || "未知"} · {repository.branch_count ?? 0}{" "}
+                      个分支
                     </div>
-                    {repository.last_sync_error && <div className="truncate text-caption text-danger-primary">{repository.last_sync_error}</div>}
+                    {repository.last_sync_error && (
+                      <div className="text-caption truncate text-danger-primary">{repository.last_sync_error}</div>
+                    )}
                     {editingRepositoryId === repository.id && (
                       <select
                         className="mt-2 h-8 w-full rounded border border-subtle bg-surface-1 px-2 text-body-xs-regular"
@@ -441,7 +458,12 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
                     )}
                   </div>
                   <StatusPill status={repository.sync_status} />
-                  <Button variant="ghost" size="sm" onClick={() => refreshRepository(repository.id)} loading={loadingAction === `sync-${repository.id}`}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => refreshRepository(repository.id)}
+                    loading={loadingAction === `sync-${repository.id}`}
+                  >
                     <RefreshCw className="size-3.5" />
                   </Button>
                   {repository.source === "manual" && (
@@ -471,7 +493,11 @@ function GithubWorkspaceSettingsPage({ params }: Route.ComponentProps) {
                         }
                         loading={loadingAction === `delete-repository-${repository.id}`}
                       >
-                        {editingRepositoryId === repository.id ? <X className="size-3.5" /> : <Trash2 className="size-3.5" />}
+                        {editingRepositoryId === repository.id ? (
+                          <X className="size-3.5" />
+                        ) : (
+                          <Trash2 className="size-3.5" />
+                        )}
                       </Button>
                     </>
                   )}
@@ -503,8 +529,10 @@ function StatusPill({ status }: { status: string }) {
   const isLoading = ["pending", "syncing"].includes(status);
   const Icon = isLoading ? Loader2 : isGood ? CheckCircle2 : XCircle;
   return (
-    <span className="inline-flex items-center gap-1 rounded border border-subtle px-2 py-1 text-caption capitalize text-secondary">
-      <Icon className={`size-3 ${isLoading ? "animate-spin" : isGood ? "text-success-primary" : "text-danger-primary"}`} />
+    <span className="text-caption inline-flex items-center gap-1 rounded border border-subtle px-2 py-1 text-secondary capitalize">
+      <Icon
+        className={`size-3 ${isLoading ? "animate-spin" : isGood ? "text-success-primary" : "text-danger-primary"}`}
+      />
       {status}
     </span>
   );

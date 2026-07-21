@@ -56,8 +56,7 @@ export const ModuleAnalyticsProgress = observer(function ModuleAnalyticsProgress
   const moduleFilter = getFilter(EIssuesStoreType.MODULE, moduleId);
   const selectedAssignees = moduleFilter?.findFirstConditionByPropertyAndOperator("assignee_id", "in");
   const selectedLabels = moduleFilter?.allConditionsForDisplay.find(
-    (condition) =>
-      condition.property === "label_id" && (condition.operator === "in" || condition.operator === "all")
+    (condition) => condition.property === "label_id" && (condition.operator === "in" || condition.operator === "all")
   );
   const selectedStateGroups = moduleFilter?.findFirstConditionByPropertyAndOperator("state_group", "in");
   const moduleDetails = getModuleById(moduleId);

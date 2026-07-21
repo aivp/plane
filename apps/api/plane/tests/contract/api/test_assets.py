@@ -11,10 +11,16 @@ from rest_framework import status
 from plane.db.models import APIToken, FileAsset, Project, ProjectMember, User
 
 
-def create_uploaded_asset(workspace, create_user, project=None):
+def create_uploaded_asset(
+    workspace,
+    create_user,
+    project=None,
+    name="preview.png",
+    asset_type="image/png",
+):
     return FileAsset.objects.create(
-        attributes={"name": "preview.png", "type": "image/png", "size": 1024},
-        asset=f"{workspace.id}/{uuid4().hex}-preview.png",
+        attributes={"name": name, "type": asset_type, "size": 1024},
+        asset=f"{workspace.id}/{uuid4().hex}-{name}",
         size=1024,
         workspace=workspace,
         project=project,
@@ -51,6 +57,7 @@ class TestGenericAssetAPIEndpoint:
         mock_generate_presigned_url.assert_called_once_with(
             object_name=asset.asset.name,
             filename=asset.attributes["name"],
+            disposition="inline",
         )
 
     def test_get_project_asset_returns_presigned_download_url_for_project_member(
@@ -71,6 +78,28 @@ class TestGenericAssetAPIEndpoint:
         mock_generate_presigned_url.assert_called_once_with(
             object_name=asset.asset.name,
             filename=asset.attributes["name"],
+            disposition="inline",
+        )
+
+    def test_get_script_capable_asset_forces_attachment_disposition(self, api_key_client, workspace, create_user):
+        asset = create_uploaded_asset(
+            workspace=workspace,
+            create_user=create_user,
+            name="diagram.svg",
+            asset_type="image/svg+xml",
+        )
+
+        with patch(
+            "plane.api.views.asset.S3Storage.generate_presigned_url",
+            return_value="https://storage.example.com/diagram.svg",
+        ) as mock_generate_presigned_url:
+            response = api_key_client.get(self.get_url(workspace.slug, asset.id))
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_generate_presigned_url.assert_called_once_with(
+            object_name=asset.asset.name,
+            filename="diagram.svg",
+            disposition="attachment",
         )
 
     def test_get_project_asset_rejects_non_project_member(self, api_key_client, workspace, create_user):
@@ -104,5 +133,5 @@ class TestGenericAssetAPIEndpoint:
             response = api_client.get(self.get_url(workspace.slug, asset.id))
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert response.data == {"error": "You are not allowed to download this asset"}
+        assert str(response.data["detail"]) == "You do not have permission to perform this action."
         mock_generate_presigned_url.assert_not_called()

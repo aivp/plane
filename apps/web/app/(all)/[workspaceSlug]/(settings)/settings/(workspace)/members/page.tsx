@@ -20,6 +20,8 @@ import { NotAuthorizedView } from "@/components/auth-screens/not-authorized-view
 import { CountChip } from "@/components/common/count-chip";
 import { PageHead } from "@/components/core/page-title";
 import { MemberListFiltersDropdown } from "@/components/project/dropdowns/filters/member-list";
+import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
+import { SendWorkspaceInvitationModal } from "@/components/workspace/members";
 import { WorkspaceMembersList } from "@/components/workspace/settings/members-list";
 import { LarkImportModal } from "@/components/workspace/settings/lark-import-modal";
 // hooks
@@ -27,10 +29,6 @@ import { useMember } from "@/hooks/store/use-member";
 import { useWorkspace } from "@/hooks/store/use-workspace";
 import { useInstance } from "@/hooks/store/use-instance";
 import { useUserPermissions } from "@/hooks/store/user";
-// plane web components
-import { BillingActionsButton } from "@/plane-web/components/workspace/billing/billing-actions-button";
-import { SendWorkspaceInvitationModal, MembersActivityButton } from "@/plane-web/components/workspace/members";
-import { SettingsContentWrapper } from "@/components/settings/content-wrapper";
 // local imports
 import type { Route } from "./+types/page";
 import { MembersWorkspaceSettingsHeader } from "./header";
@@ -148,7 +146,6 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
               handleUpdate={handleRoleFilterUpdate}
               memberType="workspace"
             />
-            <MembersActivityButton workspaceSlug={workspaceSlug} />
             {canPerformWorkspaceAdminActions && config?.is_lark_enabled && (
               <Button variant="secondary" size="lg" onClick={() => setLarkImportModal(true)}>
                 <UsersRound className="h-4 w-4" />
@@ -160,7 +157,6 @@ const WorkspaceMembersSettingsPage = observer(function WorkspaceMembersSettingsP
                 {t("workspace_settings.settings.members.add_member")}
               </Button>
             )}
-            <BillingActionsButton canPerformWorkspaceAdminActions={canPerformWorkspaceAdminActions} />
           </div>
         </div>
         <WorkspaceMembersList searchQuery={searchQuery} isAdmin={canPerformWorkspaceAdminActions} />

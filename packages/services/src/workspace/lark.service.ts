@@ -13,7 +13,10 @@ export class WorkspaceLarkService extends APIService {
     super(BASE_URL || API_BASE_URL);
   }
 
-  async contacts(workspaceSlug: string, params?: { search?: string; limit?: number }): Promise<{ contacts: TLarkContact[] }> {
+  async contacts(
+    workspaceSlug: string,
+    params?: { search?: string; limit?: number }
+  ): Promise<{ contacts: TLarkContact[] }> {
     return this.get(`/api/workspaces/${workspaceSlug}/lark/contacts/`, { params })
       .then((response) => response?.data)
       .catch((error) => {

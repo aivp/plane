@@ -21,7 +21,9 @@ export const GithubWorkspaceSettingsHeader = observer(function GithubWorkspaceSe
         <div className="flex items-center gap-2">
           <Breadcrumbs>
             <Breadcrumbs.Item
-              component={<BreadcrumbLink label={settingsDetails.i18n_label} icon={<Icon className="size-4 text-tertiary" />} />}
+              component={
+                <BreadcrumbLink label={settingsDetails.i18n_label} icon={<Icon className="size-4 text-tertiary" />} />
+              }
             />
           </Breadcrumbs>
         </div>

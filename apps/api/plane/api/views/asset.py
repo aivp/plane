@@ -19,6 +19,7 @@ from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from plane.settings.storage import S3Storage
 from plane.utils.path_validator import sanitize_filename
 from plane.db.models import APIToken, FileAsset, ProjectMember, User, Workspace, WorkspaceMember
+from plane.app.permissions import WorkspaceUserPermission
 from plane.api.views.base import BaseAPIView
 from plane.api.serializers import (
     UserAssetUploadSerializer,
@@ -404,6 +405,12 @@ class UserServerAssetEndpoint(BaseAPIView):
 class GenericAssetEndpoint(BaseAPIView):
     """This endpoint is used to upload generic assets that can be later bound to entities."""
 
+    # The workspace is taken straight from the URL slug, so every method must
+    # verify the caller is an active member of that workspace. Without this the
+    # endpoint is a cross-workspace IDOR (the public-API sibling of the
+    # CVE-2026-46558 dashboard fix).
+    permission_classes = [WorkspaceUserPermission]
+
     use_read_replica = True
 
     def has_asset_download_permission(self, request, workspace, asset):
@@ -462,10 +469,19 @@ class GenericAssetEndpoint(BaseAPIView):
                     status=status.HTTP_403_FORBIDDEN,
                 )
 
-            # Generate presigned URL for GET
+            # Generate presigned URL for GET.
+            # Force attachment disposition for script-capable MIME types (e.g. SVG)
+            # to prevent same-origin XSS when the asset URL shares the app's origin
+            # (default MinIO self-hosted setup).
             storage = S3Storage(request=request)
+            asset_mime_type = (asset.attributes.get("type") or "").split(";")[0].strip().lower()
+            disposition = (
+                "attachment" if asset_mime_type in settings.SCRIPT_CAPABLE_MIME_TYPES else "inline"
+            )
             presigned_url = storage.generate_presigned_url(
-                object_name=asset.asset.name, filename=asset.attributes.get("name")
+                object_name=asset.asset.name,
+                filename=asset.attributes.get("name"),
+                disposition=disposition,
             )
 
             return Response(

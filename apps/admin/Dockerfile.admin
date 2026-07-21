@@ -15,7 +15,7 @@ RUN corepack enable pnpm && pnpm config set registry "$NPM_CONFIG_REGISTRY"
 
 FROM base AS builder
 
-RUN pnpm add -g turbo@2.9.14
+RUN pnpm add -g turbo@2.9.18
 
 COPY . .
 

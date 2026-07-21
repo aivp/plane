@@ -58,6 +58,7 @@ export function InstanceAIForm(props: IInstanceAIForm) {
             target="_blank"
             className="text-accent-primary hover:underline"
             rel="noreferrer"
+            aria-label="Anthropic models documentation"
           >
             Anthropic models
           </a>
