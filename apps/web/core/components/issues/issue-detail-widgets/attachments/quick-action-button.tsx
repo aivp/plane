@@ -46,18 +46,29 @@ export const IssueAttachmentActionButton = observer(function IssueAttachmentActi
     onUploadSettled: handleFetchPropertyActivities,
   });
 
-  return (
-    <button
-      {...getRootProps({
-        onClick: (e) => {
-          e.stopPropagation();
-        },
-      })}
-      type="button"
-      disabled={disabled || isUploading}
-    >
+  const trigger = customButton ? (
+    <div {...getRootProps()} className="contents">
       <input {...getInputProps()} />
-      {customButton ? customButton : <PlusIcon className="h-4 w-4" />}
+      {customButton}
+    </div>
+  ) : (
+    <button {...getRootProps()} type="button" disabled={disabled || isUploading}>
+      <input {...getInputProps()} />
+      <PlusIcon className="h-4 w-4" />
     </button>
+  );
+
+  return (
+    // The dropzone click must run before propagation is stopped. Keeping this
+    // wrapper outside the dropzone also prevents custom buttons from nesting.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
+    <div
+      className="contents"
+      onClick={(event) => {
+        event.stopPropagation();
+      }}
+    >
+      {trigger}
+    </div>
   );
 });
