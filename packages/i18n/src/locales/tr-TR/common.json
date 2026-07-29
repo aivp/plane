@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Aynı anda yalnızca bir dosya yüklenebilir.",
     "file_size_limit": "Dosya boyutu {size}MB veya daha az olmalıdır.",
     "drag_and_drop": "Yüklemek için herhangi bir yere sürükleyip bırakın",
-    "delete": "Eki sil"
+    "delete": "Eki sil",
+    "batch": {
+      "drop_files": "Dosyaları buraya bırakın",
+      "select_files": "Tıklayın veya dosyaları buraya sürükleyin",
+      "uploading": "{count} dosya yükleniyor...",
+      "too_many_files_title": "Çok fazla ek",
+      "too_many_files": "Bir seferde en fazla {count} dosya yükleyebilirsiniz.",
+      "upload_success_title": "Ekler yüklendi",
+      "upload_success": "{count} ek yüklendi.",
+      "upload_failed_title": "Ekler yüklenemedi",
+      "upload_partial_title": "Bazı ekler yüklenemedi",
+      "upload_partial": "Yüklenen: {successCount}; başarısız: {failedCount}.",
+      "failed_files": "Başarısız dosyalar: {names}.",
+      "failed_files_with_more": "Başarısız dosyalar: {names} ve {count} dosya daha."
+    },
+    "html_preview": {
+      "static_notice": "Statik önizleme: komut dosyaları, bağlantılar, formlar ve uzak kaynaklar devre dışıdır.",
+      "loading": "Güvenli önizleme yükleniyor...",
+      "error": "Bu HTML eki önizlenemedi. Yine de indirebilirsiniz.",
+      "retry": "Önizlemeyi yeniden dene"
+    }
   },
   "label": {
     "select": "Etiket seç",

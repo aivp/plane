@@ -141,3 +141,16 @@ class TestGenericAssetCrossWorkspaceIDOR:
         assert response.status_code == status.HTTP_204_NO_CONTENT, f"Got {response.status_code}: {response.data!r}"
         asset.refresh_from_db()
         assert asset.is_uploaded is True
+
+    @pytest.mark.django_db
+    def test_html_upload_remains_blocked_for_generic_assets(self, api_key_client, workspace):
+        url = self.list_url(workspace.slug)
+
+        response = api_key_client.post(
+            url,
+            {"name": "report.html", "type": "text/html", "size": 1024},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data == {"error": "Invalid file type.", "status": False}

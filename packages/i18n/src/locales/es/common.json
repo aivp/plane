@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Solo se puede subir un archivo a la vez.",
     "file_size_limit": "El archivo debe tener {size}MB o menos de tamaño.",
     "drag_and_drop": "Arrastra y suelta en cualquier lugar para subir",
-    "delete": "Eliminar archivo adjunto"
+    "delete": "Eliminar archivo adjunto",
+    "batch": {
+      "drop_files": "Suelta los archivos aquí",
+      "select_files": "Haz clic o arrastra archivos aquí",
+      "uploading": "Subiendo {count} archivos...",
+      "too_many_files_title": "Demasiados archivos adjuntos",
+      "too_many_files": "Puedes subir hasta {count} archivos a la vez.",
+      "upload_success_title": "Archivos adjuntos subidos",
+      "upload_success": "Se subieron {count} archivos adjuntos.",
+      "upload_failed_title": "No se subieron los archivos adjuntos",
+      "upload_partial_title": "Algunos archivos adjuntos no se subieron",
+      "upload_partial": "Subidos: {successCount}; fallidos: {failedCount}.",
+      "failed_files": "Archivos fallidos: {names}.",
+      "failed_files_with_more": "Archivos fallidos: {names} y {count} más."
+    },
+    "html_preview": {
+      "static_notice": "Vista previa estática: los scripts, enlaces, formularios y recursos remotos están deshabilitados.",
+      "loading": "Cargando vista previa segura...",
+      "error": "No se pudo mostrar la vista previa de este archivo HTML. Aún puedes descargarlo.",
+      "retry": "Reintentar vista previa"
+    }
   },
   "label": {
     "select": "Seleccionar etiqueta",

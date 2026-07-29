@@ -788,7 +788,27 @@
     "only_one_file_allowed": "一次只能上传一个文件。",
     "file_size_limit": "文件大小必须小于或等于 {size}MB。",
     "drag_and_drop": "拖放到任意位置以上传",
-    "delete": "删除附件"
+    "delete": "删除附件",
+    "batch": {
+      "drop_files": "将文件拖放到此处",
+      "select_files": "点击或拖放多个文件",
+      "uploading": "正在上传 {count} 个文件...",
+      "too_many_files_title": "附件数量过多",
+      "too_many_files": "一次最多上传 {count} 个文件。",
+      "upload_success_title": "附件上传成功",
+      "upload_success": "已成功上传 {count} 个附件。",
+      "upload_failed_title": "附件上传失败",
+      "upload_partial_title": "部分附件上传失败",
+      "upload_partial": "成功 {successCount} 个，失败 {failedCount} 个。",
+      "failed_files": "失败文件：{names}。",
+      "failed_files_with_more": "失败文件：{names}，以及另外 {count} 个。"
+    },
+    "html_preview": {
+      "static_notice": "静态预览：脚本、链接、表单和远程资源均已禁用。",
+      "loading": "正在加载安全预览...",
+      "error": "无法预览此 HTML 附件，但仍可下载。",
+      "retry": "重试预览"
+    }
   },
   "label": {
     "select": "选择标签",

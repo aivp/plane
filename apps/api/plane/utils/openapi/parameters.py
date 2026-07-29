@@ -283,6 +283,29 @@ PER_PAGE_PARAMETER = OpenApiParameter(
     ],
 )
 
+PQL_PARAMETER = OpenApiParameter(
+    name="pql",
+    type=OpenApiTypes.STR,
+    location=OpenApiParameter.QUERY,
+    description=(
+        "Plane Query Language filter. This edition supports an allowlisted subset including "
+        "priority, stateGroup, title/text, date fields, assignee/state/label/cycle/module/project UUIDs, "
+        "currentUser(), openStates(), closedStates(), activeStates(), and common empty/overdue predicates. "
+        "A query can contain at most five conditions."
+    ),
+    required=False,
+    examples=[
+        OpenApiExample(
+            name="My open work items",
+            value="assignee = currentUser() AND stateGroup IN openStates()",
+        ),
+        OpenApiExample(
+            name="Urgent or high priority",
+            value='priority IN ("urgent", "high")',
+        ),
+    ],
+)
+
 # External Integration Parameters
 EXTERNAL_ID_PARAMETER = OpenApiParameter(
     name="external_id",

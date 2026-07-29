@@ -26,12 +26,7 @@ import { getFileIcon } from "@/components/icons";
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 import { useMember } from "@/hooks/store/use-member";
 import { usePlatformOS } from "@/hooks/use-platform-os";
-import {
-  getAttachmentDisplayName,
-  getAttachmentExtension,
-  getAttachmentURL,
-  isAttachmentMediaPreviewable,
-} from "./helpers";
+import { getAttachmentDisplayName, getAttachmentExtension, getAttachmentURL, isAttachmentPreviewable } from "./helpers";
 
 type TIssueAttachmentsListItem = {
   attachmentId: string;
@@ -55,7 +50,7 @@ export const IssueAttachmentsListItem = observer(function IssueAttachmentsListIt
   const fileName = attachment ? getAttachmentDisplayName(attachment) : "";
   const fileExtension = attachment ? getAttachmentExtension(attachment) : "";
   const fileIcon = getFileIcon(fileExtension, 18);
-  const isPreviewable = attachment ? isAttachmentMediaPreviewable(attachment) : false;
+  const isPreviewable = attachment ? isAttachmentPreviewable(attachment) : false;
   // hooks
   const { isMobile } = usePlatformOS();
 

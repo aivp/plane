@@ -27,6 +27,13 @@ export interface IIssueAttachmentStoreActions {
   // actions
   addAttachments: (issueId: string, attachments: TIssueAttachment[]) => void;
   fetchAttachments: (workspaceSlug: string, projectId: string, issueId: string) => Promise<TIssueAttachment[]>;
+  fetchHtmlPreview: (
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    attachmentId: string,
+    signal?: AbortSignal
+  ) => Promise<string>;
   createAttachment: (
     workspaceSlug: string,
     projectId: string,
@@ -133,14 +140,22 @@ export class IssueAttachmentStore implements IIssueAttachmentStore {
     return response;
   };
 
-  private debouncedUpdateProgress = debounce((issueId: string, tempId: string, progress: number) => {
-    runInAction(() => {
-      set(this.attachmentsUploadStatusMap, [issueId, tempId, "progress"], progress);
-    });
-  }, 16);
+  fetchHtmlPreview = (
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    attachmentId: string,
+    signal?: AbortSignal
+  ) =>
+    this.issueAttachmentService.getIssueAttachmentHtmlPreview(workspaceSlug, projectId, issueId, attachmentId, signal);
 
   createAttachment = async (workspaceSlug: string, projectId: string, issueId: string, file: File) => {
     const tempId = uuidv4();
+    const updateProgress = debounce((progress: number) => {
+      runInAction(() => {
+        set(this.attachmentsUploadStatusMap, [issueId, tempId, "progress"], progress);
+      });
+    }, 16);
     try {
       // update attachment upload status
       runInAction(() => {
@@ -159,7 +174,7 @@ export class IssueAttachmentStore implements IIssueAttachmentStore {
         file,
         (progressEvent) => {
           const progressPercentage = Math.round((progressEvent.progress ?? 0) * 100);
-          this.debouncedUpdateProgress(issueId, tempId, progressPercentage);
+          updateProgress(progressPercentage);
         }
       );
 
@@ -178,6 +193,7 @@ export class IssueAttachmentStore implements IIssueAttachmentStore {
       console.error("Error in uploading issue attachment:", error);
       throw error;
     } finally {
+      updateProgress.cancel();
       runInAction(() => {
         delete this.attachmentsUploadStatusMap[issueId][tempId];
       });

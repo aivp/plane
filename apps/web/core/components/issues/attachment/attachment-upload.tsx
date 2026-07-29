@@ -4,15 +4,14 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback, useState } from "react";
 import { observer } from "mobx-react";
-import { useDropzone } from "react-dropzone";
-// plane web hooks
-import { useFileSize } from "@/hooks/use-file-size";
+import { useTranslation } from "@plane/i18n";
 // types
 import type { TAttachmentOperations } from "../issue-detail-widgets/attachments/helper";
+// local imports
+import { useAttachmentBatchUpload } from "./use-attachment-batch-upload";
 
-type TAttachmentOperationsModal = Pick<TAttachmentOperations, "create">;
+type TAttachmentOperationsModal = Pick<TAttachmentOperations, "createMany">;
 
 type Props = {
   workspaceSlug: string;
@@ -21,32 +20,13 @@ type Props = {
 };
 
 export const IssueAttachmentUpload = observer(function IssueAttachmentUpload(props: Props) {
-  const { workspaceSlug, disabled = false, attachmentOperations } = props;
-  // states
-  const [isLoading, setIsLoading] = useState(false);
-  // file size
-  const { maxFileSize } = useFileSize();
-
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      const currentFile: File = acceptedFiles[0];
-      if (!currentFile || !workspaceSlug) return;
-
-      setIsLoading(true);
-      attachmentOperations.create(currentFile).finally(() => setIsLoading(false));
-    },
-    [attachmentOperations, workspaceSlug]
-  );
-
-  const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
-    onDrop,
-    maxSize: maxFileSize,
-    multiple: false,
-    disabled: isLoading || disabled,
-  });
-
-  const fileError =
-    fileRejections.length > 0 ? `Invalid file type or size (max ${maxFileSize / 1024 / 1024} MB)` : null;
+  const { disabled = false, attachmentOperations } = props;
+  const { t } = useTranslation();
+  const { getRootProps, getInputProps, isDragActive, isDragReject, isUploading, uploadingFileCount } =
+    useAttachmentBatchUpload({
+      attachmentOperations,
+      disabled,
+    });
 
   return (
     <div
@@ -58,13 +38,11 @@ export const IssueAttachmentUpload = observer(function IssueAttachmentUpload(pro
       <input {...getInputProps()} />
       <span className="flex items-center gap-2">
         {isDragActive ? (
-          <p>Drop here...</p>
-        ) : fileError ? (
-          <p className="text-center text-danger-primary">{fileError}</p>
-        ) : isLoading ? (
-          <p className="text-center">Uploading...</p>
+          <p>{t("attachment.batch.drop_files")}</p>
+        ) : isUploading ? (
+          <p className="text-center">{t("attachment.batch.uploading", { count: uploadingFileCount })}</p>
         ) : (
-          <p className="text-center">Click or drag a file here</p>
+          <p className="text-center">{t("attachment.batch.select_files")}</p>
         )}
       </span>
     </div>

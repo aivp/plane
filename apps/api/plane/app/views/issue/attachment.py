@@ -10,7 +10,7 @@ import uuid
 from django.utils import timezone
 from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 
 # Third Party imports
 from rest_framework.response import Response
@@ -25,8 +25,12 @@ from plane.bgtasks.issue_activities_task import issue_activity
 from plane.app.permissions import allow_permission, ROLE
 from plane.settings.storage import S3Storage
 from plane.utils.path_validator import sanitize_filename
+from plane.utils.attachment_html_preview import sanitize_html_attachment_preview
+from plane.utils.exception_logger import log_exception
 from plane.bgtasks.storage_metadata_task import get_asset_object_metadata
 from plane.utils.host import base_host
+
+HTML_ATTACHMENT_PREVIEW_SIZE_LIMIT = 5 * 1024 * 1024
 
 
 class IssueAttachmentEndpoint(BaseAPIView):
@@ -102,7 +106,7 @@ class IssueAttachmentV2Endpoint(BaseAPIView):
         type = request.data.get("type", False)
         size = int(request.data.get("size", settings.FILE_SIZE_LIMIT))
 
-        if not type or type not in settings.ATTACHMENT_MIME_TYPES:
+        if not type or type not in settings.ISSUE_ATTACHMENT_MIME_TYPES:
             return Response(
                 {"error": "Invalid file type.", "status": False},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -186,6 +190,9 @@ class IssueAttachmentV2Endpoint(BaseAPIView):
             disposition = request.GET.get("disposition", "attachment")
             if disposition not in {"inline", "attachment"}:
                 disposition = "attachment"
+            asset_mime_type = (asset.attributes.get("type") or "").split(";")[0].strip().lower()
+            if asset_mime_type in settings.SCRIPT_CAPABLE_MIME_TYPES:
+                disposition = "attachment"
             presigned_url = storage.generate_presigned_url(
                 object_name=asset.asset.name,
                 disposition=disposition,
@@ -235,3 +242,62 @@ class IssueAttachmentV2Endpoint(BaseAPIView):
             get_asset_object_metadata.delay(str(issue_attachment.id))
         issue_attachment.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class IssueAttachmentHTMLPreviewEndpoint(BaseAPIView):
+    model = FileAsset
+
+    @allow_permission([ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST])
+    def get(self, request, slug, project_id, issue_id, pk):
+        asset = FileAsset.objects.filter(
+            id=pk,
+            workspace__slug=slug,
+            project_id=project_id,
+            issue_id=issue_id,
+            entity_type=FileAsset.EntityTypeContext.ISSUE_ATTACHMENT,
+            is_uploaded=True,
+        ).first()
+        if asset is None:
+            return Response(
+                {"error": "Attachment not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        asset_mime_type = (asset.attributes.get("type") or "").split(";")[0].strip().lower()
+        if asset_mime_type != "text/html":
+            return Response(
+                {"error": "Only HTML attachments can be previewed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if asset.size > HTML_ATTACHMENT_PREVIEW_SIZE_LIMIT:
+            return Response(
+                {"error": "HTML attachment is too large to preview."},
+                status=413,
+            )
+
+        storage = S3Storage(request=request)
+        try:
+            content = storage.download_file_content(
+                asset.asset.name,
+                max_bytes=HTML_ATTACHMENT_PREVIEW_SIZE_LIMIT,
+            )
+        except Exception as exc:
+            log_exception(exc)
+            content = None
+        if content is None:
+            return Response(
+                {"error": "Unable to read attachment content."},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        if len(content) > HTML_ATTACHMENT_PREVIEW_SIZE_LIMIT:
+            return Response(
+                {"error": "HTML attachment is too large to preview."},
+                status=413,
+            )
+
+        sanitized_content = sanitize_html_attachment_preview(content)
+        response = HttpResponse(sanitized_content, content_type="text/plain; charset=utf-8")
+        response["X-Content-Type-Options"] = "nosniff"
+        response["Cache-Control"] = "private, no-store"
+        return response

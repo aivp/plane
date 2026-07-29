@@ -155,6 +155,21 @@ class S3Storage(S3Boto3Storage):
             "Metadata": response.get("Metadata", {}),
         }
 
+    def download_file_content(self, object_name, max_bytes=None):
+        """Read an object into memory for bounded server-side processing."""
+        try:
+            response = self.s3_client.get_object(Bucket=self.aws_storage_bucket_name, Key=str(object_name))
+            body = response.get("Body")
+            if body is None:
+                return None
+            try:
+                return body.read(max_bytes + 1) if max_bytes is not None else body.read()
+            finally:
+                body.close()
+        except Exception as e:
+            log_exception(e)
+            return None
+
     def copy_object(self, object_name, new_object_name):
         """Copy an S3 object to a new location"""
         try:

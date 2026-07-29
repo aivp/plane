@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Only one file can be uploaded at a time.",
     "file_size_limit": "File must be of {size}MB or less in size.",
     "drag_and_drop": "Drag and drop anywhere to upload",
-    "delete": "Delete attachment"
+    "delete": "Delete attachment",
+    "batch": {
+      "drop_files": "Drop files here",
+      "select_files": "Click or drag files here",
+      "uploading": "Uploading {count} files...",
+      "too_many_files_title": "Too many attachments",
+      "too_many_files": "You can upload up to {count} files at a time.",
+      "upload_success_title": "Attachments uploaded",
+      "upload_success": "Uploaded {count} attachments.",
+      "upload_failed_title": "Attachments not uploaded",
+      "upload_partial_title": "Some attachments were not uploaded",
+      "upload_partial": "Uploaded {successCount}; failed {failedCount}.",
+      "failed_files": "Failed files: {names}.",
+      "failed_files_with_more": "Failed files: {names}, and {count} more."
+    },
+    "html_preview": {
+      "static_notice": "Static preview: scripts, links, forms, and remote resources are disabled.",
+      "loading": "Loading safe preview...",
+      "error": "This HTML attachment could not be previewed. You can still download it.",
+      "retry": "Retry preview"
+    }
   },
   "label": {
     "select": "Add labels",

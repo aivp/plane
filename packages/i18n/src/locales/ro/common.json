@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Se poate încărca doar un fișier o dată.",
     "file_size_limit": "Fișierul trebuie să aibă {size}MB sau mai puțin.",
     "drag_and_drop": "Trage și plasează oriunde pentru a încărca",
-    "delete": "Șterge atașamentul"
+    "delete": "Șterge atașamentul",
+    "batch": {
+      "drop_files": "Plasați fișierele aici",
+      "select_files": "Faceți clic sau glisați fișierele aici",
+      "uploading": "Se încarcă {count} fișiere...",
+      "too_many_files_title": "Prea multe atașamente",
+      "too_many_files": "Puteți încărca cel mult {count} fișiere simultan.",
+      "upload_success_title": "Atașamente încărcate",
+      "upload_success": "Au fost încărcate {count} atașamente.",
+      "upload_failed_title": "Atașamentele nu au fost încărcate",
+      "upload_partial_title": "Unele atașamente nu au fost încărcate",
+      "upload_partial": "Încărcate: {successCount}; eșuate: {failedCount}.",
+      "failed_files": "Fișiere eșuate: {names}.",
+      "failed_files_with_more": "Fișiere eșuate: {names} și încă {count}."
+    },
+    "html_preview": {
+      "static_notice": "Previzualizare statică: scripturile, linkurile, formularele și resursele de la distanță sunt dezactivate.",
+      "loading": "Se încarcă previzualizarea sigură...",
+      "error": "Acest atașament HTML nu poate fi previzualizat. Îl puteți descărca în continuare.",
+      "retry": "Reîncercați previzualizarea"
+    }
   },
   "label": {
     "select": "Selectează eticheta",

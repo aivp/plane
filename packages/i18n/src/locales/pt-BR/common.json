@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Apenas um arquivo pode ser enviado por vez.",
     "file_size_limit": "O arquivo deve ter {size}MB ou menos.",
     "drag_and_drop": "Arraste e solte em qualquer lugar para enviar",
-    "delete": "Excluir anexo"
+    "delete": "Excluir anexo",
+    "batch": {
+      "drop_files": "Solte os arquivos aqui",
+      "select_files": "Clique ou arraste arquivos para cá",
+      "uploading": "Enviando {count} arquivos...",
+      "too_many_files_title": "Anexos demais",
+      "too_many_files": "Você pode enviar até {count} arquivos por vez.",
+      "upload_success_title": "Anexos enviados",
+      "upload_success": "{count} anexos enviados.",
+      "upload_failed_title": "Anexos não enviados",
+      "upload_partial_title": "Alguns anexos não foram enviados",
+      "upload_partial": "Enviados: {successCount}; falhas: {failedCount}.",
+      "failed_files": "Arquivos com falha: {names}.",
+      "failed_files_with_more": "Arquivos com falha: {names} e mais {count}."
+    },
+    "html_preview": {
+      "static_notice": "Visualização estática: scripts, links, formulários e recursos remotos estão desativados.",
+      "loading": "Carregando visualização segura...",
+      "error": "Não foi possível visualizar este anexo HTML. Você ainda pode baixá-lo.",
+      "retry": "Tentar visualizar novamente"
+    }
   },
   "label": {
     "select": "Selecionar etiqueta",

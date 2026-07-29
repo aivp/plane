@@ -14,6 +14,8 @@ const FALLBACK_MIME_TYPES_BY_EXTENSION: Record<string, string> = {
   csv: "text/csv",
   css: "text/css",
   gltf: "model/gltf+json",
+  htm: "text/html",
+  html: "text/html",
   js: "text/javascript",
   json: "application/json",
   markdown: "text/markdown",

@@ -4,18 +4,24 @@
  * See the LICENSE file for details.
  */
 
-import { useCallback, useEffect, useMemo, type SyntheticEvent } from "react";
-import { ChevronLeft, ChevronRight, Download, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Download, LoaderCircle, X } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
+import { Button } from "@plane/propel/button";
 import { Dialog, EDialogWidth } from "@plane/propel/dialog";
 import { IconButton } from "@plane/propel/icon-button";
 import { Tooltip } from "@plane/propel/tooltip";
 import type { TIssueAttachment } from "@plane/types";
 // local imports
-import { getAttachmentDisplayName, getAttachmentMediaType, getAttachmentURL } from "./helpers";
+import { getAttachmentDisplayName, getAttachmentPreviewType, getAttachmentURL } from "./helpers";
+import { buildSandboxedHtmlPreviewDocument } from "./html-preview";
+
+type THtmlPreviewState = { status: "loading" } | { status: "success"; content: string } | { status: "error" };
 
 type TIssueAttachmentMediaPreviewModal = {
   activeAttachmentId: string | null;
   attachments: TIssueAttachment[];
+  fetchHtmlPreview: (attachmentId: string, signal?: AbortSignal) => Promise<string>;
   isOpen: boolean;
   onActiveAttachmentIdChange: (attachmentId: string) => void;
   onClose: () => void;
@@ -25,16 +31,33 @@ const stopPreviewEventPropagation = (event: SyntheticEvent) => {
   event.stopPropagation();
 };
 
+const isCanceledRequest = (error: unknown): boolean => {
+  if (error instanceof DOMException && error.name === "AbortError") return true;
+  if (!error || typeof error !== "object") return false;
+  if ("code" in error && error.code === "ERR_CANCELED") return true;
+  return "name" in error && error.name === "CanceledError";
+};
+
 export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPreviewModal) {
-  const { activeAttachmentId, attachments, isOpen, onActiveAttachmentIdChange, onClose } = props;
+  const { activeAttachmentId, attachments, fetchHtmlPreview, isOpen, onActiveAttachmentIdChange, onClose } = props;
+  const { t } = useTranslation();
+  const htmlPreviewCacheRef = useRef<Record<string, THtmlPreviewState>>({});
+  const [htmlPreviewCache, setHtmlPreviewCache] = useState<Record<string, THtmlPreviewState>>({});
+  const [htmlPreviewRetry, setHtmlPreviewRetry] = useState(0);
 
   const activeIndex = useMemo(
     () => attachments.findIndex((attachment) => attachment.id === activeAttachmentId),
     [activeAttachmentId, attachments]
   );
   const activeAttachment = activeIndex >= 0 ? attachments[activeIndex] : undefined;
-  const activeMediaType = activeAttachment ? getAttachmentMediaType(activeAttachment) : undefined;
+  const activePreviewType = activeAttachment ? getAttachmentPreviewType(activeAttachment) : undefined;
   const canNavigate = attachments.length > 1;
+  const activeHtmlPreview = activeAttachment ? htmlPreviewCache[activeAttachment.id] : undefined;
+
+  const updateHtmlPreviewCache = useCallback((attachmentId: string, previewState: THtmlPreviewState) => {
+    htmlPreviewCacheRef.current[attachmentId] = previewState;
+    setHtmlPreviewCache((currentCache) => ({ ...currentCache, [attachmentId]: previewState }));
+  }, []);
 
   const movePreview = useCallback(
     (direction: -1 | 1) => {
@@ -71,15 +94,49 @@ export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPre
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, movePreview, onClose]);
 
-  if (!activeAttachment || !activeMediaType) return null;
+  useEffect(() => {
+    if (!isOpen) {
+      htmlPreviewCacheRef.current = {};
+      setHtmlPreviewCache({});
+      return;
+    }
+    if (!activeAttachment || activePreviewType !== "html") return;
+    if (htmlPreviewCacheRef.current[activeAttachment.id]?.status === "success") return;
+
+    const controller = new AbortController();
+    updateHtmlPreviewCache(activeAttachment.id, { status: "loading" });
+    void fetchHtmlPreview(activeAttachment.id, controller.signal)
+      .then((content) => updateHtmlPreviewCache(activeAttachment.id, { status: "success", content }))
+      .catch((error) =>
+        isCanceledRequest(error)
+          ? undefined
+          : updateHtmlPreviewCache(activeAttachment.id, {
+              status: "error",
+            })
+      );
+
+    return () => controller.abort();
+  }, [activeAttachment, activePreviewType, fetchHtmlPreview, htmlPreviewRetry, isOpen, updateHtmlPreviewCache]);
+
+  if (!activeAttachment || !activePreviewType) return null;
 
   const fileName = getAttachmentDisplayName(activeAttachment);
-  const previewURL = getAttachmentURL(activeAttachment, "inline");
+  const previewURL = activePreviewType === "html" ? undefined : getAttachmentURL(activeAttachment, "inline");
   const downloadURL = getAttachmentURL(activeAttachment, "attachment");
 
   const handleDownload = () => {
     if (!downloadURL) return;
     window.open(downloadURL, "_blank", "noopener,noreferrer");
+  };
+
+  const handleRetryHtmlPreview = () => {
+    delete htmlPreviewCacheRef.current[activeAttachment.id];
+    setHtmlPreviewCache((currentCache) => {
+      const nextCache = { ...currentCache };
+      delete nextCache[activeAttachment.id];
+      return nextCache;
+    });
+    setHtmlPreviewRetry((currentRetry) => currentRetry + 1);
   };
 
   return (
@@ -125,8 +182,39 @@ export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPre
             </Tooltip>
           )}
 
-          {previewURL &&
-            (activeMediaType === "image" ? (
+          {activePreviewType === "html" ? (
+            <div className="flex h-full w-full flex-col overflow-hidden rounded-md border border-subtle bg-surface-1">
+              <div className="flex flex-shrink-0 items-center gap-2 border-b border-subtle bg-warning-subtle px-3 py-2 text-12 text-warning-primary">
+                <AlertTriangle className="size-4 flex-shrink-0" />
+                <span>{t("attachment.html_preview.static_notice")}</span>
+              </div>
+              <div className="flex min-h-0 flex-1 items-center justify-center">
+                {!activeHtmlPreview || activeHtmlPreview.status === "loading" ? (
+                  <div className="flex items-center gap-2 text-13 text-secondary">
+                    <LoaderCircle className="size-5 animate-spin" />
+                    <span>{t("attachment.html_preview.loading")}</span>
+                  </div>
+                ) : activeHtmlPreview.status === "error" ? (
+                  <div className="flex flex-col items-center gap-3 px-6 text-center">
+                    <p className="text-13 text-secondary">{t("attachment.html_preview.error")}</p>
+                    <Button variant="secondary" onClick={handleRetryHtmlPreview}>
+                      {t("attachment.html_preview.retry")}
+                    </Button>
+                  </div>
+                ) : (
+                  <iframe
+                    title={fileName}
+                    className="pointer-events-none h-full w-full border-0 bg-white"
+                    referrerPolicy="no-referrer"
+                    sandbox=""
+                    srcDoc={buildSandboxedHtmlPreviewDocument(activeHtmlPreview.content)}
+                  />
+                )}
+              </div>
+            </div>
+          ) : (
+            previewURL &&
+            (activePreviewType === "image" ? (
               <img alt={fileName} className="max-h-full max-w-full object-contain" src={previewURL} />
             ) : (
               <video
@@ -138,7 +226,8 @@ export function IssueAttachmentMediaPreviewModal(props: TIssueAttachmentMediaPre
               >
                 <track kind="captions" />
               </video>
-            ))}
+            ))
+          )}
 
           {canNavigate && (
             <Tooltip tooltipContent="Next attachment">

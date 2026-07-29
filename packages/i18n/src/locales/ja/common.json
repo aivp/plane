@@ -788,7 +788,27 @@
     "only_one_file_allowed": "一度にアップロードできるファイルは1つだけです。",
     "file_size_limit": "ファイルサイズは{size}MB以下である必要があります。",
     "drag_and_drop": "どこにでもドラッグ＆ドロップでアップロード",
-    "delete": "添付ファイルを削除"
+    "delete": "添付ファイルを削除",
+    "batch": {
+      "drop_files": "ここにファイルをドロップ",
+      "select_files": "クリックするか、ここにファイルをドラッグ",
+      "uploading": "{count} 個のファイルをアップロード中...",
+      "too_many_files_title": "添付ファイルが多すぎます",
+      "too_many_files": "一度にアップロードできるファイルは最大 {count} 個です。",
+      "upload_success_title": "添付ファイルをアップロードしました",
+      "upload_success": "{count} 個の添付ファイルをアップロードしました。",
+      "upload_failed_title": "添付ファイルをアップロードできませんでした",
+      "upload_partial_title": "一部の添付ファイルをアップロードできませんでした",
+      "upload_partial": "成功: {successCount}、失敗: {failedCount}。",
+      "failed_files": "失敗したファイル: {names}。",
+      "failed_files_with_more": "失敗したファイル: {names}、ほか {count} 個。"
+    },
+    "html_preview": {
+      "static_notice": "静的プレビュー: スクリプト、リンク、フォーム、リモートリソースは無効です。",
+      "loading": "安全なプレビューを読み込み中...",
+      "error": "この HTML 添付ファイルをプレビューできません。ダウンロードは可能です。",
+      "retry": "プレビューを再試行"
+    }
   },
   "label": {
     "select": "ラベルを選択",

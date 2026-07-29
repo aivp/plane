@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Możesz przesłać tylko jeden plik naraz.",
     "file_size_limit": "Plik musi być mniejszy niż {size}MB.",
     "drag_and_drop": "Przeciągnij plik w dowolne miejsce, aby przesłać",
-    "delete": "Usuń załącznik"
+    "delete": "Usuń załącznik",
+    "batch": {
+      "drop_files": "Upuść pliki tutaj",
+      "select_files": "Kliknij lub przeciągnij pliki tutaj",
+      "uploading": "Przesyłanie {count} plików...",
+      "too_many_files_title": "Zbyt wiele załączników",
+      "too_many_files": "Jednocześnie możesz przesłać maksymalnie {count} plików.",
+      "upload_success_title": "Załączniki przesłane",
+      "upload_success": "Przesłano {count} załączników.",
+      "upload_failed_title": "Nie przesłano załączników",
+      "upload_partial_title": "Niektórych załączników nie udało się przesłać",
+      "upload_partial": "Przesłano: {successCount}; niepowodzenia: {failedCount}.",
+      "failed_files": "Pliki zakończone niepowodzeniem: {names}.",
+      "failed_files_with_more": "Pliki zakończone niepowodzeniem: {names} i jeszcze {count}."
+    },
+    "html_preview": {
+      "static_notice": "Podgląd statyczny: skrypty, linki, formularze i zasoby zdalne są wyłączone.",
+      "loading": "Wczytywanie bezpiecznego podglądu...",
+      "error": "Nie można wyświetlić podglądu tego załącznika HTML. Nadal możesz go pobrać.",
+      "retry": "Ponów podgląd"
+    }
   },
   "label": {
     "select": "Wybierz etykietę",

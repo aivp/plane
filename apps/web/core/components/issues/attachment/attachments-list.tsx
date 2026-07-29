@@ -14,7 +14,7 @@ import type { TAttachmentHelpers } from "../issue-detail-widgets/attachments/hel
 // components
 import { IssueAttachmentsDetail } from "./attachment-detail";
 import { IssueAttachmentsUploadDetails } from "./attachment-upload-details";
-import { isAttachmentMediaPreviewable } from "./helpers";
+import { isAttachmentPreviewable } from "./helpers";
 import { IssueAttachmentMediaPreviewModal } from "./media-preview-modal";
 
 type TIssueAttachmentsList = {
@@ -34,18 +34,18 @@ export const IssueAttachmentsList = observer(function IssueAttachmentsList(props
   const { snapshot: attachmentSnapshot } = attachmentHelpers;
   const { uploadStatus } = attachmentSnapshot;
   const issueAttachments = getAttachmentsByIssueId(issueId);
-  const mediaAttachments =
+  const previewableAttachments =
     issueAttachments
       ?.map((attachmentId) => getAttachmentById(attachmentId))
-      .filter(
-        (attachment): attachment is TIssueAttachment => !!attachment && isAttachmentMediaPreviewable(attachment)
-      ) ?? [];
+      .filter((attachment): attachment is TIssueAttachment => !!attachment && isAttachmentPreviewable(attachment)) ??
+    [];
 
   return (
     <>
       <IssueAttachmentMediaPreviewModal
         activeAttachmentId={previewAttachmentId}
-        attachments={mediaAttachments}
+        attachments={previewableAttachments}
+        fetchHtmlPreview={attachmentHelpers.operations.fetchHtmlPreview}
         isOpen={!!previewAttachmentId}
         onActiveAttachmentIdChange={setPreviewAttachmentId}
         onClose={() => setPreviewAttachmentId(null)}

@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Je možné nahrať iba jeden súbor naraz.",
     "file_size_limit": "Súbor musí byť menší ako {size}MB.",
     "drag_and_drop": "Pretiahnite súbor kamkoľvek pre nahratie",
-    "delete": "Zmazať prílohu"
+    "delete": "Zmazať prílohu",
+    "batch": {
+      "drop_files": "Presuňte súbory sem",
+      "select_files": "Kliknite sem alebo sem presuňte súbory",
+      "uploading": "Nahráva sa {count} súborov...",
+      "too_many_files_title": "Príliš veľa príloh",
+      "too_many_files": "Naraz môžete nahrať najviac {count} súborov.",
+      "upload_success_title": "Prílohy boli nahrané",
+      "upload_success": "Počet nahraných príloh: {count}.",
+      "upload_failed_title": "Prílohy sa nepodarilo nahrať",
+      "upload_partial_title": "Niektoré prílohy sa nepodarilo nahrať",
+      "upload_partial": "Nahrané: {successCount}; zlyhania: {failedCount}.",
+      "failed_files": "Neúspešné súbory: {names}.",
+      "failed_files_with_more": "Neúspešné súbory: {names} a ďalších {count}."
+    },
+    "html_preview": {
+      "static_notice": "Statická ukážka: skripty, odkazy, formuláre a vzdialené zdroje sú zakázané.",
+      "loading": "Načítava sa bezpečná ukážka...",
+      "error": "Túto HTML prílohu nemožno zobraziť. Stále si ju môžete stiahnuť.",
+      "retry": "Znova načítať ukážku"
+    }
   },
   "label": {
     "select": "Vybrať štítok",

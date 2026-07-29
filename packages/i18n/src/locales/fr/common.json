@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Un seul fichier peut être téléchargé à la fois.",
     "file_size_limit": "Le fichier doit faire {size}MB ou moins.",
     "drag_and_drop": "Glissez-déposez n’importe où pour uploader",
-    "delete": "Supprimer la pièce jointe"
+    "delete": "Supprimer la pièce jointe",
+    "batch": {
+      "drop_files": "Déposez les fichiers ici",
+      "select_files": "Cliquez ou faites glisser des fichiers ici",
+      "uploading": "Importation de {count} fichiers...",
+      "too_many_files_title": "Trop de pièces jointes",
+      "too_many_files": "Vous pouvez importer jusqu’à {count} fichiers à la fois.",
+      "upload_success_title": "Pièces jointes importées",
+      "upload_success": "{count} pièces jointes importées.",
+      "upload_failed_title": "Pièces jointes non importées",
+      "upload_partial_title": "Certaines pièces jointes n’ont pas été importées",
+      "upload_partial": "Importées : {successCount} ; échecs : {failedCount}.",
+      "failed_files": "Fichiers en échec : {names}.",
+      "failed_files_with_more": "Fichiers en échec : {names} et {count} autres."
+    },
+    "html_preview": {
+      "static_notice": "Aperçu statique : les scripts, liens, formulaires et ressources distantes sont désactivés.",
+      "loading": "Chargement de l’aperçu sécurisé...",
+      "error": "Impossible d’afficher l’aperçu de cette pièce jointe HTML. Vous pouvez toujours la télécharger.",
+      "retry": "Réessayer l’aperçu"
+    }
   },
   "label": {
     "select": "Sélectionner une étiquette",

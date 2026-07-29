@@ -788,7 +788,27 @@
     "only_one_file_allowed": "一次只能上傳一個檔案。",
     "file_size_limit": "檔案大小必須小於或等於 {size}MB。",
     "drag_and_drop": "拖曳到任何位置以上傳",
-    "delete": "刪除附件"
+    "delete": "刪除附件",
+    "batch": {
+      "drop_files": "將檔案拖放到此處",
+      "select_files": "點擊或拖放多個檔案",
+      "uploading": "正在上傳 {count} 個檔案...",
+      "too_many_files_title": "附件數量過多",
+      "too_many_files": "一次最多上傳 {count} 個檔案。",
+      "upload_success_title": "附件上傳成功",
+      "upload_success": "已成功上傳 {count} 個附件。",
+      "upload_failed_title": "附件上傳失敗",
+      "upload_partial_title": "部分附件上傳失敗",
+      "upload_partial": "成功 {successCount} 個，失敗 {failedCount} 個。",
+      "failed_files": "失敗檔案：{names}。",
+      "failed_files_with_more": "失敗檔案：{names}，以及另外 {count} 個。"
+    },
+    "html_preview": {
+      "static_notice": "靜態預覽：腳本、連結、表單和遠端資源均已停用。",
+      "loading": "正在載入安全預覽...",
+      "error": "無法預覽此 HTML 附件，但仍可下載。",
+      "retry": "重試預覽"
+    }
   },
   "label": {
     "select": "選擇標籤",

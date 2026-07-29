@@ -788,7 +788,27 @@
     "only_one_file_allowed": "È possibile caricare un solo file alla volta.",
     "file_size_limit": "Il file deve essere di {size}MB o meno.",
     "drag_and_drop": "Trascina e rilascia ovunque per caricare",
-    "delete": "Elimina allegato"
+    "delete": "Elimina allegato",
+    "batch": {
+      "drop_files": "Rilascia qui i file",
+      "select_files": "Fai clic o trascina qui i file",
+      "uploading": "Caricamento di {count} file...",
+      "too_many_files_title": "Troppi allegati",
+      "too_many_files": "Puoi caricare fino a {count} file alla volta.",
+      "upload_success_title": "Allegati caricati",
+      "upload_success": "{count} allegati caricati.",
+      "upload_failed_title": "Allegati non caricati",
+      "upload_partial_title": "Alcuni allegati non sono stati caricati",
+      "upload_partial": "Caricati: {successCount}; non riusciti: {failedCount}.",
+      "failed_files": "File non riusciti: {names}.",
+      "failed_files_with_more": "File non riusciti: {names} e altri {count}."
+    },
+    "html_preview": {
+      "static_notice": "Anteprima statica: script, link, moduli e risorse remote sono disabilitati.",
+      "loading": "Caricamento dell’anteprima sicura...",
+      "error": "Impossibile visualizzare l’anteprima di questo allegato HTML. Puoi comunque scaricarlo.",
+      "retry": "Riprova l’anteprima"
+    }
   },
   "label": {
     "select": "Seleziona etichetta",

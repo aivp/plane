@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Es kann jeweils nur eine Datei hochgeladen werden.",
     "file_size_limit": "Die Datei muss kleiner als {size} MB sein.",
     "drag_and_drop": "Datei hierher ziehen, um sie hochzuladen",
-    "delete": "Anhang löschen"
+    "delete": "Anhang löschen",
+    "batch": {
+      "drop_files": "Dateien hier ablegen",
+      "select_files": "Klicken oder Dateien hierher ziehen",
+      "uploading": "{count} Dateien werden hochgeladen...",
+      "too_many_files_title": "Zu viele Anhänge",
+      "too_many_files": "Sie können höchstens {count} Dateien gleichzeitig hochladen.",
+      "upload_success_title": "Anhänge hochgeladen",
+      "upload_success": "{count} Anhänge wurden hochgeladen.",
+      "upload_failed_title": "Anhänge nicht hochgeladen",
+      "upload_partial_title": "Einige Anhänge wurden nicht hochgeladen",
+      "upload_partial": "{successCount} hochgeladen; {failedCount} fehlgeschlagen.",
+      "failed_files": "Fehlgeschlagene Dateien: {names}.",
+      "failed_files_with_more": "Fehlgeschlagene Dateien: {names} und {count} weitere."
+    },
+    "html_preview": {
+      "static_notice": "Statische Vorschau: Skripte, Links, Formulare und externe Ressourcen sind deaktiviert.",
+      "loading": "Sichere Vorschau wird geladen...",
+      "error": "Für diesen HTML-Anhang konnte keine Vorschau erstellt werden. Sie können ihn weiterhin herunterladen.",
+      "retry": "Vorschau erneut versuchen"
+    }
   },
   "label": {
     "select": "Label auswählen",

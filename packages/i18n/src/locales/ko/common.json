@@ -788,7 +788,27 @@
     "only_one_file_allowed": "한 번에 하나의 파일만 업로드할 수 있습니다.",
     "file_size_limit": "파일 크기는 {size}MB 이하이어야 합니다.",
     "drag_and_drop": "업로드하려면 아무 곳에나 드래그 앤 드롭하세요",
-    "delete": "첨부 파일 삭제"
+    "delete": "첨부 파일 삭제",
+    "batch": {
+      "drop_files": "여기에 파일을 놓으세요",
+      "select_files": "클릭하거나 파일을 여기로 끌어오세요",
+      "uploading": "파일 {count}개 업로드 중...",
+      "too_many_files_title": "첨부 파일이 너무 많습니다",
+      "too_many_files": "한 번에 최대 {count}개의 파일을 업로드할 수 있습니다.",
+      "upload_success_title": "첨부 파일 업로드 완료",
+      "upload_success": "첨부 파일 {count}개를 업로드했습니다.",
+      "upload_failed_title": "첨부 파일을 업로드하지 못했습니다",
+      "upload_partial_title": "일부 첨부 파일을 업로드하지 못했습니다",
+      "upload_partial": "성공: {successCount}개, 실패: {failedCount}개.",
+      "failed_files": "실패한 파일: {names}.",
+      "failed_files_with_more": "실패한 파일: {names} 외 {count}개."
+    },
+    "html_preview": {
+      "static_notice": "정적 미리보기: 스크립트, 링크, 양식 및 원격 리소스가 비활성화되었습니다.",
+      "loading": "안전한 미리보기 로드 중...",
+      "error": "이 HTML 첨부 파일을 미리 볼 수 없습니다. 다운로드는 계속 가능합니다.",
+      "retry": "미리보기 다시 시도"
+    }
   },
   "label": {
     "select": "레이블 선택",

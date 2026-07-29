@@ -6,26 +6,22 @@
 
 import { useCallback, useState } from "react";
 import { observer } from "mobx-react";
-import type { FileRejection } from "react-dropzone";
-import { useDropzone } from "react-dropzone";
 import { UploadCloud } from "lucide-react";
 import { useTranslation } from "@plane/i18n";
-import { TOAST_TYPE, setToast } from "@plane/propel/toast";
 import type { TIssueAttachment, TIssueServiceType } from "@plane/types";
 import { EIssueServiceType } from "@plane/types";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
-// plane web hooks
-import { useFileSize } from "@/hooks/use-file-size";
 // types
 import type { TAttachmentHelpers } from "../issue-detail-widgets/attachments/helper";
 // components
 import { IssueAttachmentsListItem } from "./attachment-list-item";
 import { IssueAttachmentsUploadItem } from "./attachment-list-upload-item";
-import { isAttachmentMediaPreviewable } from "./helpers";
+import { isAttachmentPreviewable } from "./helpers";
 import { IssueAttachmentMediaPreviewModal } from "./media-preview-modal";
 // types
 import { IssueAttachmentDeleteModal } from "./delete-attachment-modal";
+import { useAttachmentBatchUpload } from "./use-attachment-batch-upload";
 
 type TIssueAttachmentItemList = {
   workspaceSlug: string;
@@ -47,7 +43,6 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
   } = props;
   const { t } = useTranslation();
   // states
-  const [isUploading, setIsUploading] = useState(false);
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null);
   // store hooks
   const {
@@ -57,66 +52,24 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
     fetchActivities,
   } = useIssueDetail(issueServiceType);
   const { operations: attachmentOperations, snapshot: attachmentSnapshot } = attachmentHelpers;
-  const { create: createAttachment } = attachmentOperations;
   const { uploadStatus } = attachmentSnapshot;
-  // file size
-  const { maxFileSize } = useFileSize();
   // derived values
   const issueAttachments = getAttachmentsByIssueId(issueId);
-  const mediaAttachments =
+  const previewableAttachments =
     issueAttachments
       ?.map((attachmentId) => getAttachmentById(attachmentId))
-      .filter(
-        (attachment): attachment is TIssueAttachment => !!attachment && isAttachmentMediaPreviewable(attachment)
-      ) ?? [];
+      .filter((attachment): attachment is TIssueAttachment => !!attachment && isAttachmentPreviewable(attachment)) ??
+    [];
 
   // handlers
   const handleFetchPropertyActivities = useCallback(() => {
     fetchActivities(workspaceSlug, projectId, issueId);
   }, [fetchActivities, workspaceSlug, projectId, issueId]);
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
-      const totalAttachedFiles = acceptedFiles.length + rejectedFiles.length;
-
-      if (rejectedFiles.length === 0) {
-        const currentFile: File = acceptedFiles[0];
-        if (!currentFile || !workspaceSlug) return;
-
-        setIsUploading(true);
-        createAttachment(currentFile)
-          .catch(() => {
-            setToast({
-              type: TOAST_TYPE.ERROR,
-              title: t("toast.error"),
-              message: t("attachment.error"),
-            });
-          })
-          .finally(() => {
-            handleFetchPropertyActivities();
-            setIsUploading(false);
-          });
-        return;
-      }
-
-      setToast({
-        type: TOAST_TYPE.ERROR,
-        title: t("toast.error"),
-        message:
-          totalAttachedFiles > 1
-            ? t("attachment.only_one_file_allowed")
-            : t("attachment.file_size_limit", { size: maxFileSize / 1024 / 1024 }),
-      });
-      return;
-    },
-    [createAttachment, maxFileSize, workspaceSlug, handleFetchPropertyActivities, t]
-  );
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    maxSize: maxFileSize,
-    multiple: false,
-    disabled: isUploading || disabled,
+  const { getRootProps, getInputProps, isDragActive, isUploading } = useAttachmentBatchUpload({
+    attachmentOperations,
+    disabled,
+    onUploadSettled: handleFetchPropertyActivities,
   });
 
   return (
@@ -128,7 +81,8 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
         <>
           <IssueAttachmentMediaPreviewModal
             activeAttachmentId={previewAttachmentId}
-            attachments={mediaAttachments}
+            attachments={previewableAttachments}
+            fetchHtmlPreview={attachmentOperations.fetchHtmlPreview}
             isOpen={!!previewAttachmentId}
             onActiveAttachmentIdChange={setPreviewAttachmentId}
             onClose={() => setPreviewAttachmentId(null)}
@@ -144,7 +98,9 @@ export const IssueAttachmentItemList = observer(function IssueAttachmentItemList
           )}
           <div
             {...getRootProps()}
-            className={`relative flex flex-col ${isDragActive && issueAttachments.length < 3 ? "min-h-[200px]" : ""} ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
+            className={`relative flex flex-col ${isDragActive && issueAttachments.length < 3 ? "min-h-[200px]" : ""} ${
+              disabled || isUploading ? "cursor-not-allowed" : "cursor-pointer"
+            }`}
           >
             <input {...getInputProps()} />
             {isDragActive && (

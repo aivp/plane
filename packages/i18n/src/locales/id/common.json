@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Hanya satu file yang dapat diunggah pada satu waktu.",
     "file_size_limit": "File harus berukuran {size}MB atau lebih kecil.",
     "drag_and_drop": "Seret dan jatuhkan di mana saja untuk mengunggah",
-    "delete": "Hapus lampiran"
+    "delete": "Hapus lampiran",
+    "batch": {
+      "drop_files": "Letakkan file di sini",
+      "select_files": "Klik atau seret file ke sini",
+      "uploading": "Mengunggah {count} file...",
+      "too_many_files_title": "Terlalu banyak lampiran",
+      "too_many_files": "Anda dapat mengunggah hingga {count} file sekaligus.",
+      "upload_success_title": "Lampiran berhasil diunggah",
+      "upload_success": "{count} lampiran berhasil diunggah.",
+      "upload_failed_title": "Lampiran gagal diunggah",
+      "upload_partial_title": "Beberapa lampiran gagal diunggah",
+      "upload_partial": "Berhasil: {successCount}; gagal: {failedCount}.",
+      "failed_files": "File yang gagal: {names}.",
+      "failed_files_with_more": "File yang gagal: {names}, dan {count} lainnya."
+    },
+    "html_preview": {
+      "static_notice": "Pratinjau statis: skrip, tautan, formulir, dan sumber daya jarak jauh dinonaktifkan.",
+      "loading": "Memuat pratinjau aman...",
+      "error": "Lampiran HTML ini tidak dapat dipratinjau. Anda tetap dapat mengunduhnya.",
+      "retry": "Coba lagi pratinjau"
+    }
   },
   "label": {
     "select": "Pilih label",

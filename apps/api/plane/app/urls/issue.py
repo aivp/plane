@@ -26,6 +26,7 @@ from plane.app.views import (
     IssuePaginatedViewSet,
     IssueDetailEndpoint,
     IssueAttachmentV2Endpoint,
+    IssueAttachmentHTMLPreviewEndpoint,
     IssueBulkUpdateDateEndpoint,
     IssueVersionEndpoint,
     WorkItemDescriptionVersionEndpoint,
@@ -149,6 +150,11 @@ urlpatterns = [
         "assets/v2/workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/attachments/<uuid:pk>/",
         IssueAttachmentV2Endpoint.as_view(),
         name="project-issue-attachments",
+    ),
+    path(
+        "assets/v2/workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/attachments/<uuid:pk>/preview/",
+        IssueAttachmentHTMLPreviewEndpoint.as_view(http_method_names=["get"]),
+        name="project-issue-attachment-preview",
     ),
     ## End Issues
     ## Issue Activity

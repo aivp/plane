@@ -545,6 +545,14 @@ ATTACHMENT_MIME_TYPES = [
     "text/markdown",
 ]
 
+# Work item attachments accept HTML documents as downloadable files. Keep this
+# separate from the generic asset allowlist so HTML cannot be uploaded through
+# asset endpoints that may be embedded in application content.
+ISSUE_ATTACHMENT_MIME_TYPES = [
+    *ATTACHMENT_MIME_TYPES,
+    "text/html",
+]
+
 # MIME types that browsers can execute as scripts when served inline.
 # These must always be served with Content-Disposition: attachment, even if they
 # somehow end up stored (e.g. uploaded before this restriction was added).

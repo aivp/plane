@@ -25,12 +25,7 @@ import { useMember } from "@/hooks/store/use-member";
 import { usePlatformOS } from "@/hooks/use-platform-os";
 // types
 import type { TAttachmentHelpers } from "../issue-detail-widgets/attachments/helper";
-import {
-  getAttachmentDisplayName,
-  getAttachmentExtension,
-  getAttachmentURL,
-  isAttachmentMediaPreviewable,
-} from "./helpers";
+import { getAttachmentDisplayName, getAttachmentExtension, getAttachmentURL, isAttachmentPreviewable } from "./helpers";
 
 type TAttachmentOperationsRemoveModal = Exclude<TAttachmentHelpers, "create">;
 
@@ -56,7 +51,7 @@ export const IssueAttachmentsDetail = observer(function IssueAttachmentsDetail(p
   const fileName = attachment ? getAttachmentDisplayName(attachment) : "";
   const fileExtension = attachment ? getAttachmentExtension(attachment) : "";
   const fileIcon = getFileIcon(fileExtension, 28);
-  const isPreviewable = attachment ? isAttachmentMediaPreviewable(attachment) : false;
+  const isPreviewable = attachment ? isAttachmentPreviewable(attachment) : false;
   // hooks
   const { isMobile } = usePlatformOS();
 

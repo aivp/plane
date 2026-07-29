@@ -12,9 +12,12 @@ import { EIssueServiceType } from "@plane/types";
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 // types
 import type { TAttachmentUploadStatus } from "@/store/issue/issue-details/attachment.store";
+import { uploadFilesWithConcurrency, type TAttachmentBatchUploadResult } from "../../attachment/batch-upload";
 
 export type TAttachmentOperations = {
   create: (file: File) => Promise<void>;
+  createMany: (files: File[]) => Promise<TAttachmentBatchUploadResult>;
+  fetchHtmlPreview: (attachmentId: string, signal?: AbortSignal) => Promise<string>;
   remove: (attachmentId: string) => Promise<void>;
 };
 
@@ -34,7 +37,7 @@ export const useAttachmentOperations = (
   issueServiceType: TIssueServiceType = EIssueServiceType.ISSUES
 ): TAttachmentHelpers => {
   const {
-    attachment: { createAttachment, removeAttachment, getAttachmentsUploadStatusByIssueId },
+    attachment: { createAttachment, fetchHtmlPreview, removeAttachment, getAttachmentsUploadStatusByIssueId },
   } = useIssueDetail(issueServiceType);
 
   const attachmentOperations: TAttachmentOperations = useMemo(
@@ -56,6 +59,16 @@ export const useAttachmentOperations = (
 
         await attachmentUploadPromise;
       },
+      createMany: async (files) => {
+        if (!workspaceSlug || !projectId || !issueId) throw new Error("Missing required fields");
+        return uploadFilesWithConcurrency(files, async (file) => {
+          await createAttachment(workspaceSlug, projectId, issueId, file);
+        });
+      },
+      fetchHtmlPreview: async (attachmentId, signal) => {
+        if (!workspaceSlug || !projectId || !issueId) throw new Error("Missing required fields");
+        return fetchHtmlPreview(workspaceSlug, projectId, issueId, attachmentId, signal);
+      },
       remove: async (attachmentId) => {
         try {
           if (!workspaceSlug || !projectId || !issueId) throw new Error("Missing required fields");
@@ -74,7 +87,7 @@ export const useAttachmentOperations = (
         }
       },
     }),
-    [workspaceSlug, projectId, issueId, createAttachment, removeAttachment]
+    [workspaceSlug, projectId, issueId, createAttachment, fetchHtmlPreview, removeAttachment]
   );
   const attachmentsUploadStatus = getAttachmentsUploadStatusByIssueId(issueId);
 

@@ -78,6 +78,24 @@ export class IssueAttachmentService extends APIService {
       });
   }
 
+  async getIssueAttachmentHtmlPreview(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    attachmentId: string,
+    signal?: AbortSignal
+  ): Promise<string> {
+    return this.get(
+      `/api/assets/v2/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/attachments/${attachmentId}/preview/`,
+      {},
+      { responseType: "text", signal }
+    )
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data ?? error;
+      });
+  }
+
   async deleteIssueAttachment(
     workspaceSlug: string,
     projectId: string,

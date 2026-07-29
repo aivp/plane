@@ -255,8 +255,8 @@ export class IssueDetail implements IIssueDetail {
     this.openWidgets = state;
     if (this.lastWidgetAction) this.lastWidgetAction = null;
   };
-  setLastWidgetAction = (action: TWorkItemWidgets) => {
-    this.openWidgets = [action];
+  setLastWidgetAction = (widget: TWorkItemWidgets) => {
+    this.openWidgets = [widget];
   };
   toggleOpenWidget = (state: TWorkItemWidgets) => {
     if (this.openWidgets && this.openWidgets.includes(state))
@@ -311,6 +311,13 @@ export class IssueDetail implements IIssueDetail {
     this.attachment.addAttachments(issueId, attachments);
   fetchAttachments = async (workspaceSlug: string, projectId: string, issueId: string) =>
     this.attachment.fetchAttachments(workspaceSlug, projectId, issueId);
+  fetchHtmlPreview = (
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    attachmentId: string,
+    signal?: AbortSignal
+  ) => this.attachment.fetchHtmlPreview(workspaceSlug, projectId, issueId, attachmentId, signal);
   createAttachment = async (workspaceSlug: string, projectId: string, issueId: string, file: File) =>
     this.attachment.createAttachment(workspaceSlug, projectId, issueId, file);
   removeAttachment = async (workspaceSlug: string, projectId: string, issueId: string, attachmentId: string) =>

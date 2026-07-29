@@ -8,6 +8,7 @@ import type { TIssueAttachment } from "@plane/types";
 import { getFileURL } from "@plane/utils";
 
 export type TAttachmentMediaType = "image" | "video";
+export type TAttachmentPreviewType = TAttachmentMediaType | "html";
 export type TAttachmentDisposition = "inline" | "attachment";
 
 const IMAGE_EXTENSIONS = new Set(["avif", "bmp", "gif", "jpeg", "jpg", "png", "svg", "tif", "tiff", "webp"]);
@@ -35,8 +36,19 @@ export const getAttachmentMediaType = (attachment: TIssueAttachment): TAttachmen
   return undefined;
 };
 
+export const getAttachmentPreviewType = (attachment: TIssueAttachment): TAttachmentPreviewType | undefined => {
+  const mimeType = attachment.attributes.type?.split(";")[0]?.trim().toLowerCase();
+  const extension = getAttachmentExtension(attachment);
+  if (mimeType === "text/html" || extension === "html" || extension === "htm") return "html";
+
+  return getAttachmentMediaType(attachment);
+};
+
 export const isAttachmentMediaPreviewable = (attachment: TIssueAttachment): boolean =>
   !!getAttachmentMediaType(attachment);
+
+export const isAttachmentPreviewable = (attachment: TIssueAttachment): boolean =>
+  !!getAttachmentPreviewType(attachment);
 
 export const getAttachmentURL = (
   attachment: TIssueAttachment,

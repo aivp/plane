@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Chỉ có thể tải lên một tệp mỗi lần.",
     "file_size_limit": "Kích thước tệp phải nhỏ hơn hoặc bằng {size}MB.",
     "drag_and_drop": "Kéo và thả vào bất kỳ đâu để tải lên",
-    "delete": "Xóa tệp đính kèm"
+    "delete": "Xóa tệp đính kèm",
+    "batch": {
+      "drop_files": "Thả tệp vào đây",
+      "select_files": "Nhấp hoặc kéo tệp vào đây",
+      "uploading": "Đang tải lên {count} tệp...",
+      "too_many_files_title": "Quá nhiều tệp đính kèm",
+      "too_many_files": "Bạn có thể tải lên tối đa {count} tệp mỗi lần.",
+      "upload_success_title": "Đã tải lên tệp đính kèm",
+      "upload_success": "Đã tải lên {count} tệp đính kèm.",
+      "upload_failed_title": "Không thể tải lên tệp đính kèm",
+      "upload_partial_title": "Một số tệp đính kèm chưa được tải lên",
+      "upload_partial": "Thành công: {successCount}; thất bại: {failedCount}.",
+      "failed_files": "Tệp bị lỗi: {names}.",
+      "failed_files_with_more": "Tệp bị lỗi: {names} và {count} tệp khác."
+    },
+    "html_preview": {
+      "static_notice": "Bản xem trước tĩnh: tập lệnh, liên kết, biểu mẫu và tài nguyên từ xa đã bị vô hiệu hóa.",
+      "loading": "Đang tải bản xem trước an toàn...",
+      "error": "Không thể xem trước tệp đính kèm HTML này. Bạn vẫn có thể tải xuống.",
+      "retry": "Thử xem trước lại"
+    }
   },
   "label": {
     "select": "Chọn nhãn",

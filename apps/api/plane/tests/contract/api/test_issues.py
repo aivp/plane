@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # See the LICENSE file for details.
 
+from unittest.mock import patch
+
 import pytest
 from rest_framework import status
 
-from plane.db.models import Issue, Project, ProjectMember, State
+from plane.db.models import Issue, IssueAssignee, Project, ProjectMember, State
 
 
 @pytest.fixture
@@ -94,3 +96,101 @@ class TestIssueListOrderByInjection:
             assert response.status_code == status.HTTP_200_OK, (
                 f"order_by={value!r} got {response.status_code}: {response.data!r}"
             )
+
+
+@pytest.mark.contract
+class TestIssueListPQL:
+    """Contract coverage for the PQL query used by Plane MCP clients."""
+
+    def get_url(self, workspace_slug, project_id):
+        return f"/api/v1/workspaces/{workspace_slug}/projects/{project_id}/work-items/"
+
+    @pytest.mark.django_db
+    def test_filters_current_users_open_work_items(
+        self,
+        api_key_client,
+        workspace,
+        project,
+        state,
+        issue,
+        create_user,
+    ):
+        IssueAssignee.objects.create(issue=issue, assignee=create_user, project=project)
+        closed_state = State.objects.create(
+            name="Done",
+            project=project,
+            workspace=workspace,
+            group="completed",
+        )
+        closed_issue = Issue.objects.create(
+            name="Closed assigned issue",
+            workspace=workspace,
+            project=project,
+            state=closed_state,
+            created_by=create_user,
+        )
+        IssueAssignee.objects.create(issue=closed_issue, assignee=create_user, project=project)
+        Issue.objects.create(
+            name="Open unassigned issue",
+            workspace=workspace,
+            project=project,
+            state=state,
+            created_by=create_user,
+        )
+
+        response = api_key_client.get(
+            self.get_url(workspace.slug, project.id),
+            {"pql": "assignee = currentUser() AND stateGroup IN openStates()"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK, f"Got {response.status_code}: {response.data!r}"
+        assert {str(item["id"]) for item in response.data["results"]} == {str(issue.id)}
+
+    @pytest.mark.django_db
+    def test_rejects_non_allowlisted_field(self, api_key_client, workspace, project):
+        response = api_key_client.get(
+            self.get_url(workspace.slug, project.id),
+            {"pql": 'created_by__password = "secret"'},
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Unsupported PQL field" in response.data["pql"]
+        assert response.data["failed_pql"] == 'created_by__password = "secret"'
+
+    @pytest.mark.django_db
+    def test_rejects_more_than_five_conditions(self, api_key_client, workspace, project):
+        response = api_key_client.get(
+            self.get_url(workspace.slug, project.id),
+            {
+                "pql": (
+                    'priority = "high" OR priority = "urgent" OR priority = "medium" '
+                    'OR priority = "low" OR priority = "none" OR title ~ "overflow"'
+                )
+            },
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "at most 5 conditions" in response.data["pql"]
+
+
+@pytest.mark.contract
+class TestWorkItemAttachmentUpload:
+    @pytest.mark.django_db
+    def test_html_attachment_can_start_upload(self, api_key_client, workspace, project, issue):
+        url = (
+            f"/api/v1/workspaces/{workspace.slug}/projects/{project.id}/"
+            f"work-items/{issue.id}/attachments/"
+        )
+
+        with patch(
+            "plane.api.views.issue.S3Storage.generate_presigned_post",
+            return_value={"url": "https://storage.example.com", "fields": {}},
+        ):
+            response = api_key_client.post(
+                url,
+                {"name": "report.htm", "type": "text/html", "size": 1024},
+                format="json",
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["attachment"]["attributes"]["type"] == "text/html"

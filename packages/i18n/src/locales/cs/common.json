@@ -788,7 +788,27 @@
     "only_one_file_allowed": "Je možné nahrát pouze jeden soubor najednou.",
     "file_size_limit": "Soubor musí být menší než {size}MB.",
     "drag_and_drop": "Přetáhněte soubor kamkoli pro nahrání",
-    "delete": "Smazat přílohu"
+    "delete": "Smazat přílohu",
+    "batch": {
+      "drop_files": "Přetáhněte soubory sem",
+      "select_files": "Klikněte sem nebo sem přetáhněte soubory",
+      "uploading": "Nahrává se {count} souborů...",
+      "too_many_files_title": "Příliš mnoho příloh",
+      "too_many_files": "Najednou můžete nahrát až {count} souborů.",
+      "upload_success_title": "Přílohy byly nahrány",
+      "upload_success": "Nahráno příloh: {count}.",
+      "upload_failed_title": "Přílohy se nepodařilo nahrát",
+      "upload_partial_title": "Některé přílohy se nepodařilo nahrát",
+      "upload_partial": "Nahráno: {successCount}; selhalo: {failedCount}.",
+      "failed_files": "Neúspěšné soubory: {names}.",
+      "failed_files_with_more": "Neúspěšné soubory: {names} a dalších {count}."
+    },
+    "html_preview": {
+      "static_notice": "Statický náhled: skripty, odkazy, formuláře a vzdálené prostředky jsou zakázány.",
+      "loading": "Načítá se bezpečný náhled...",
+      "error": "Tuto HTML přílohu nelze zobrazit. Stále ji můžete stáhnout.",
+      "retry": "Zkusit náhled znovu"
+    }
   },
   "label": {
     "select": "Vybrat štítek",

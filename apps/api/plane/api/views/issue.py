@@ -80,6 +80,7 @@ from plane.db.models import (
 )
 from plane.settings.storage import S3Storage
 from plane.utils.path_validator import sanitize_filename
+from plane.utils.pql import PQLParseError, compile_work_item_pql
 from plane.utils.order_queryset import (
     ACTIVITY_ORDER_BY_ALLOWLIST,
     ISSUE_ORDER_BY_ALLOWLIST,
@@ -112,6 +113,7 @@ from plane.utils.openapi import (
     PROJECT_ID_QUERY_PARAMETER,
     CURSOR_PARAMETER,
     PER_PAGE_PARAMETER,
+    PQL_PARAMETER,
     EXTERNAL_ID_PARAMETER,
     EXTERNAL_SOURCE_PARAMETER,
     ORDER_BY_PARAMETER,
@@ -290,6 +292,7 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
         parameters=[
             CURSOR_PARAMETER,
             PER_PAGE_PARAMETER,
+            PQL_PARAMETER,
             EXTERNAL_ID_PARAMETER,
             EXTERNAL_SOURCE_PARAMETER,
             ORDER_BY_PARAMETER,
@@ -314,19 +317,31 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
         Supports filtering, ordering, and field selection through query parameters.
         """
 
-        unsupported_filters = [param for param in ("pql", "filters") if request.GET.get(param)]
-        if unsupported_filters:
+        if request.GET.get("filters"):
             return Response(
                 {
                     "pql": (
-                        "PQL and structured filters are not supported on this Plane edition. "
-                        "Remove the pql/filters parameter and filter results client-side, or use "
-                        "a Plane edition that supports work item query filtering."
+                        "The structured filters parameter is not supported on this Plane edition. "
+                        "Use the pql parameter or filter results client-side."
                     ),
-                    "unsupported_parameters": unsupported_filters,
+                    "unsupported_parameters": ["filters"],
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        pql_filter = Q()
+        pql = request.GET.get("pql")
+        if pql:
+            try:
+                pql_filter = compile_work_item_pql(pql, request.user.id)
+            except PQLParseError as exc:
+                return Response(
+                    {
+                        "pql": f"Invalid or unsupported PQL: {exc}",
+                        "failed_pql": pql,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         external_id = request.GET.get("external_id")
         external_source = request.GET.get("external_source")
@@ -358,6 +373,7 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
 
         issue_queryset = (
             self.get_queryset()
+            .filter(pql_filter)
             .annotate(
                 cycle_id=Subquery(
                     CycleIssue.objects.filter(issue=OuterRef("id"), deleted_at__isnull=True).values("cycle_id")[:1]
@@ -380,7 +396,9 @@ class IssueListCreateAPIEndpoint(BaseAPIView):
             )
         )
 
-        total_issue_queryset = Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug)
+        total_issue_queryset = (
+            Issue.issue_objects.filter(project_id=project_id, workspace__slug=slug).filter(pql_filter).distinct()
+        )
 
         # Priority Ordering
         if order_by_param == "priority" or order_by_param == "-priority":
@@ -1913,7 +1931,7 @@ class IssueAttachmentListCreateAPIEndpoint(BaseAPIView):
 
         size_limit = min(size, settings.FILE_SIZE_LIMIT)
 
-        if not type or type not in settings.ATTACHMENT_MIME_TYPES:
+        if not type or type not in settings.ISSUE_ATTACHMENT_MIME_TYPES:
             return Response(
                 {"error": "Invalid file type.", "status": False},
                 status=status.HTTP_400_BAD_REQUEST,
