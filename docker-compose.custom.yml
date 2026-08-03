@@ -6,6 +6,7 @@ x-images:
   admin: &admin_image ${PLANE_IMAGE_REGISTRY:-local}/plane-admin:${PLANE_IMAGE_TAG:-feishu-lark}
   space: &space_image ${PLANE_IMAGE_REGISTRY:-local}/plane-space:${PLANE_IMAGE_TAG:-feishu-lark}
   live: &live_image ${PLANE_IMAGE_REGISTRY:-local}/plane-live:${PLANE_IMAGE_TAG:-feishu-lark}
+  mcp: &mcp_image ${PLANE_IMAGE_REGISTRY:-local}/plane-mcp:${PLANE_IMAGE_TAG:-feishu-lark}
   proxy: &proxy_image ${PLANE_IMAGE_REGISTRY:-local}/plane-proxy:${PLANE_IMAGE_TAG:-feishu-lark}
 
 x-node-build-args: &node_build_args
@@ -79,6 +80,13 @@ x-api-env: &api_env
   PLANE_PUBLIC_BASE_URL: ${PLANE_PUBLIC_BASE_URL:-http://localhost}
 
 services:
+  mcp:
+    <<: *app_image_policy
+    image: *mcp_image
+    build:
+      context: ./apps/mcp
+    restart: unless-stopped
+
   web:
     <<: *app_image_policy
     image: *frontend_image
@@ -280,6 +288,7 @@ services:
       - space
       - admin
       - live
+      - mcp
 
 volumes:
   pgdata:

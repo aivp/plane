@@ -57,7 +57,7 @@ PLANE_IMAGE_PULL_POLICY=always
 
 ```bash
 docker compose --env-file .env.custom -f docker-compose.custom.yml build \
-  web admin space live api proxy
+  web admin space live api mcp proxy
 ```
 
 `worker`、`beat-worker`、`migrator`、`lark-connector` 共用 `plane-backend` 镜像，不需要单独构建。
@@ -79,10 +79,10 @@ sed -i "s|^PLANE_IMAGE_TAG=.*|PLANE_IMAGE_TAG=${PLANE_IMAGE_TAG}|" .env.custom
 sed -i "s|^PLANE_IMAGE_PULL_POLICY=.*|PLANE_IMAGE_PULL_POLICY=${PLANE_IMAGE_PULL_POLICY}|" .env.custom
 
 docker compose --env-file .env.custom -f docker-compose.custom.yml build \
-  web admin space live api proxy
+  web admin space live api mcp proxy
 
 docker compose --env-file .env.custom -f docker-compose.custom.yml push \
-  web admin space live api proxy
+  web admin space live api mcp proxy
 ```
 
 `worker`、`beat-worker`、`migrator`、`lark-connector` 共用 `plane-backend` 镜像，不需要单独构建。
@@ -100,7 +100,7 @@ docker compose --env-file .env.custom -f docker-compose.custom.yml exec -T plane
 
 ```bash
 docker compose --env-file .env.custom -f docker-compose.custom.yml pull \
-  web admin space live api proxy
+  web admin space live api mcp proxy
 ```
 
 如果生产服务器直接构建镜像，跳过 pull，改为确认镜像已构建：
@@ -154,11 +154,56 @@ https://<APP_DOMAIN>/god-mode/authentication/lark
 
 在后台保存 App ID / App Secret 后，执行 Test connection，确认 tenant token 和通讯录 scope 可用。
 
+## Remote MCP
+
+`mcp` 服务默认随 Compose 启动，由 Caddy 暴露在 `https://<APP_DOMAIN>/mcp`。部署端不配置、保存或固定任何 Plane API Key、Workspace Slug 或 Plane Host，也不需要 OAuth Client。
+
+每个调用方必须在每次 MCP HTTP 请求中发送三个 Header：
+
+```text
+X-Plane-Api-Key: <调用方的 API Key>
+X-Plane-Workspace-Slug: <调用方的 Workspace Slug>
+X-Plane-Api-Host-Url: https://<调用方的 Plane 域名>
+```
+
+只支持可解析到公网 IP 的 HTTPS Plane 根地址；不接受路径、查询参数、本机或私网地址。这是为了防止公开 MCP 入口被滥用为 SSRF/内网探测代理。
+
+只支持 stdio MCP 的客户端可使用 `mcp-remote`。以下配置正好只需要设置三个调用方参数：
+
+```json
+{
+  "mcpServers": {
+    "plane": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://plane.aidong-ai.com/mcp",
+        "--header",
+        "X-Plane-Api-Key:${PLANE_API_KEY}",
+        "--header",
+        "X-Plane-Workspace-Slug:${PLANE_WORKSPACE_SLUG}",
+        "--header",
+        "X-Plane-Api-Host-Url:${PLANE_API_HOST_URL}"
+      ],
+      "env": {
+        "PLANE_API_KEY": "<你的 API_KEY>",
+        "PLANE_WORKSPACE_SLUG": "aidong",
+        "PLANE_API_HOST_URL": "https://plane.aidong-ai.com"
+      }
+    }
+  }
+}
+```
+
+`mcp-remote` 的 `--header` 和环境变量替换语法见其[官方说明](https://github.com/geelen/mcp-remote#custom-headers)。API Key 应只放在调用方的密钥配置中，不要提交到仓库。
+
 ## 验证
 
 ```bash
 docker compose --env-file .env.custom -f docker-compose.custom.yml ps
-docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=200 api worker
+docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=200 api worker mcp
+curl -fsS "https://${APP_DOMAIN}/mcp/healthz"
 ```
 
 启用长连接时，再查看 `lark-connector` 日志：
@@ -169,7 +214,8 @@ docker compose --env-file .env.custom -f docker-compose.custom.yml logs --tail=2
 
 检查项：
 
-- `api`、`worker`、`beat-worker`、`web`、`admin`、`space`、`live`、`proxy` 处于 running。
+- `api`、`worker`、`beat-worker`、`web`、`admin`、`space`、`live`、`mcp`、`proxy` 处于 running。
+- `https://<APP_DOMAIN>/mcp/healthz` 返回 `{"status":"ok"}`。
 - 未启用长连接时，`lark-connector` 不应出现在 running 服务中。
 - 启用长连接时，`lark-connector` 处于 running，且日志没有重复拿锁失败。
 - 后台 `/god-mode/authentication/lark` 连接测试成功。
