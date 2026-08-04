@@ -16,6 +16,7 @@ from plane_mcp_gateway.auth import (
 )
 from plane_mcp_gateway.client import install_dynamic_client_context
 from plane_mcp_gateway.request_config import Resolver
+from plane_mcp_gateway.tool_profile import apply_project_management_tool_profile
 
 
 install_dynamic_client_context()
@@ -46,6 +47,7 @@ def create_app(
         ),
     )
     register_tools(mcp)
+    apply_project_management_tool_profile(mcp)
     app = mcp.http_app(path="/mcp", stateless_http=True, json_response=True)
     app.routes.insert(0, Route("/mcp/healthz", health_check, methods=["GET"]))
     return app

@@ -63,4 +63,25 @@ flowchart LR
 
 ## 兼容范围
 
-网关暴露上游版本注册的完整工具集合。最终可用工具取决于调用方指定的 Plane Host 所部署的 API 版本；较旧的自托管 Plane 若缺少某个上游 API，对应工具会返回 Plane API 的 404/校验错误，不影响其它兼容工具。
+上游锁定版本共注册 177 个工具。默认 Remote MCP 在服务器端使用显式 allowlist，只暴露与本项目 Community API 和内部项目管理相关的 75 个工具：
+
+| 领域                 | 工具数 |
+| -------------------- | -----: |
+| Work items           |     12 |
+| Cycles               |     10 |
+| Modules              |      8 |
+| Projects             |      7 |
+| Intake               |      5 |
+| Labels               |      5 |
+| States               |      5 |
+| Attachments          |      5 |
+| Comments             |      5 |
+| Links                |      5 |
+| Relations            |      3 |
+| Activities           |      2 |
+| User、Workspace、PQL |      3 |
+| 合计                 |     75 |
+
+默认隐藏 102 个工具，涉及 Release、Customer、Initiative、Milestone、Page、自定义属性、Work item type、自定义关系定义、Work log、Role、项目估算和 Feature 管理。这些领域不属于当前内部项目管理主流程，其中多数也没有出现在当前 Community 公共 API 路由中。
+
+allowlist 同时约束 `tools/list` 和 `tools/call`：隐藏工具不会出现在 Agent 上下文中，也不能绕过列表按名称直接调用。上游将来新增工具时默认保持隐藏，必须经过兼容性和用途评审后才能加入。

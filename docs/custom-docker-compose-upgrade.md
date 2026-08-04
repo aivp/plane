@@ -158,6 +158,8 @@ https://<APP_DOMAIN>/god-mode/authentication/lark
 
 `mcp` 服务默认随 Compose 启动，由 Caddy 暴露在 `https://<APP_DOMAIN>/mcp`。部署端不配置、保存或固定任何 Plane API Key、Workspace Slug 或 Plane Host，也不需要 OAuth Client。
 
+默认 MCP 接口只暴露 75 个内部项目管理工具，不再直接暴露上游全部 177 个工具。保留项目、工作项、周期、模块、Intake、状态、标签、评论、活动、附件、链接、关系和成员能力；Release、Customer、Initiative、Milestone、Page、自定义属性、工作项类型、关系定义、工时、Role、项目估算和 Feature 管理默认隐藏。
+
 推荐调用方在每次 MCP HTTP 请求中发送三个 Header：
 
 ```text
