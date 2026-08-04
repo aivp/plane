@@ -14,6 +14,7 @@ def main() -> None:
         port=int(os.getenv("MCP_PORT", "8211")),
         proxy_headers=True,
         forwarded_allow_ips=os.getenv("MCP_FORWARDED_ALLOW_IPS", "127.0.0.1"),
+        access_log=False,
     )
 
 

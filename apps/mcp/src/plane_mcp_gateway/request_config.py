@@ -14,6 +14,9 @@ AUTHORIZATION_HEADER = "Authorization"
 API_KEY_HEADER = "X-Plane-Api-Key"
 WORKSPACE_HEADER = "X-Plane-Workspace-Slug"
 API_HOST_HEADER = "X-Plane-Api-Host-Url"
+QUERY_API_KEY = "plane_api_key"
+QUERY_WORKSPACE_SLUG = "plane_workspace_slug"
+QUERY_API_HOST_URL = "plane_api_host_url"
 
 Resolver = Callable[..., list[tuple]]
 
@@ -26,7 +29,7 @@ class InvalidPlaneRequestConfig(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class PlaneRequestConfig:
-    """The three Plane values supplied by one MCP caller."""
+    """The Plane values resolved for one MCP caller request."""
 
     api_key: str = field(repr=False)
     workspace_slug: str
@@ -37,9 +40,14 @@ class PlaneRequestConfig:
         cls,
         headers: Mapping[str, str],
         *,
+        query_params: Mapping[str, str] | None = None,
+        default_api_host_url: str | None = None,
         resolver: Resolver = socket.getaddrinfo,
     ) -> PlaneRequestConfig:
         normalized_headers = {name.lower(): value for name, value in headers.items()}
+        normalized_query = {
+            name.lower(): value for name, value in (query_params or {}).items()
+        }
         caller_api_key = normalized_headers.get(API_KEY_HEADER.lower(), "").strip()
         authorization = normalized_headers.get(AUTHORIZATION_HEADER.lower(), "").strip()
         bearer_api_key = ""
@@ -54,31 +62,56 @@ class PlaneRequestConfig:
                     f"{AUTHORIZATION_HEADER} must contain a non-empty Bearer API key"
                 )
             bearer_api_key = bearer_api_key.strip()
-        if caller_api_key and bearer_api_key and caller_api_key != bearer_api_key:
-            raise InvalidPlaneRequestConfig(
-                f"{API_KEY_HEADER} and {AUTHORIZATION_HEADER} must contain the same API key"
-            )
-        api_key = caller_api_key or bearer_api_key
+        query_api_key = normalized_query.get(QUERY_API_KEY, "").strip()
+        api_key = _select_value(
+            "Plane API key",
+            caller_api_key,
+            bearer_api_key,
+            query_api_key,
+        )
         if not api_key:
-            raise InvalidPlaneRequestConfig(f"{API_KEY_HEADER} is required")
+            raise InvalidPlaneRequestConfig(
+                f"{API_KEY_HEADER} or {QUERY_API_KEY} is required"
+            )
 
-        workspace_slug = normalized_headers.get(WORKSPACE_HEADER.lower(), "").strip()
+        workspace_slug = _select_value(
+            "Plane workspace slug",
+            normalized_headers.get(WORKSPACE_HEADER.lower(), "").strip(),
+            normalized_query.get(QUERY_WORKSPACE_SLUG, "").strip(),
+        )
         if not workspace_slug:
-            raise InvalidPlaneRequestConfig(f"{WORKSPACE_HEADER} is required")
+            raise InvalidPlaneRequestConfig(
+                f"{WORKSPACE_HEADER} or {QUERY_WORKSPACE_SLUG} is required"
+            )
         if not _WORKSPACE_SLUG_PATTERN.fullmatch(workspace_slug):
             raise InvalidPlaneRequestConfig(
                 f"{WORKSPACE_HEADER} is not a valid workspace slug"
             )
 
-        api_host_url = normalized_headers.get(API_HOST_HEADER.lower(), "").strip()
+        api_host_url = _select_value(
+            "Plane API host URL",
+            normalized_headers.get(API_HOST_HEADER.lower(), "").strip(),
+            normalized_query.get(QUERY_API_HOST_URL, "").strip(),
+        )
+        if not api_host_url and default_api_host_url:
+            api_host_url = default_api_host_url.strip()
         if not api_host_url:
-            raise InvalidPlaneRequestConfig(f"{API_HOST_HEADER} is required")
+            raise InvalidPlaneRequestConfig(
+                f"{API_HOST_HEADER} or {QUERY_API_HOST_URL} is required"
+            )
 
         return cls(
             api_key=api_key,
             workspace_slug=workspace_slug,
             api_host_url=validate_plane_api_host_url(api_host_url, resolver=resolver),
         )
+
+
+def _select_value(label: str, *values: str) -> str:
+    provided_values = {value for value in values if value}
+    if len(provided_values) > 1:
+        raise InvalidPlaneRequestConfig(f"Conflicting {label} values were provided")
+    return next(iter(provided_values), "")
 
 
 def validate_plane_api_host_url(

@@ -14,23 +14,23 @@ https://<APP_DOMAIN>/mcp
 - `PLANE_WORKSPACE_SLUG`
 - `PLANE_API_HOST_URL`
 
-这三个值属于 MCP 调用方。调用方通过三个 HTTP Header 把它们附加到每个 MCP 请求，网关验证后只为当前请求创建 Plane SDK Client。
+这些值属于 MCP 调用方。调用方优先通过 HTTP Header 传递；不支持自定义 Header 的平台可以使用 Query String。Plane Host 在与 MCP 同域时可以省略，网关验证后只为当前请求创建 Plane SDK Client。
 
 ## 请求协议
 
-| 调用方配置             | MCP HTTP Header          | 用途                            |
-| ---------------------- | ------------------------ | ------------------------------- |
-| `PLANE_API_KEY`        | `X-Plane-Api-Key`        | 当前调用方的 Plane API Key      |
-| `PLANE_WORKSPACE_SLUG` | `X-Plane-Workspace-Slug` | 当前工具调用所使用的 Workspace  |
-| `PLANE_API_HOST_URL`   | `X-Plane-Api-Host-Url`   | 当前调用方要访问的 Plane 根地址 |
+| 调用方配置             | MCP HTTP Header          | Query 回退             | 用途                           |
+| ---------------------- | ------------------------ | ---------------------- | ------------------------------ |
+| `PLANE_API_KEY`        | `X-Plane-Api-Key`        | `PLANE_API_KEY`        | 当前调用方的 Plane API Key     |
+| `PLANE_WORKSPACE_SLUG` | `X-Plane-Workspace-Slug` | `PLANE_WORKSPACE_SLUG` | 当前工具调用所使用的 Workspace |
+| `PLANE_API_HOST_URL`   | `X-Plane-Api-Host-Url`   | `PLANE_API_HOST_URL`   | 可选；省略时使用 MCP 请求同域  |
 
-同一 MCP 服务可以并发服务不同 Host、Workspace 和 API Key；配置不会写入数据库、Redis、Compose 环境变量或 MCP 服务日志负载。
+同一 MCP 服务可以并发服务不同 Host、Workspace 和 API Key；配置不会写入数据库、Redis、Compose 环境变量或 MCP 服务日志负载。Query 参数名不区分大小写；Header 与 Query 冲突时拒绝请求。
 
 ## 调用流程
 
 ```mermaid
 flowchart LR
-  Client["MCP 调用方"] -->|"三个 X-Plane-* Header"| Proxy["Caddy /mcp"]
+  Client["MCP 调用方"] -->|"X-Plane-* Header 或 Query"| Proxy["Caddy /mcp"]
   Proxy --> MCP["无状态 MCP 网关"]
   MCP -->|"校验 Host 与 API Key"| PlaneA["调用方指定的 Plane API"]
   MCP -->|"逐请求 PlaneClient"| PlaneA
@@ -45,6 +45,7 @@ flowchart LR
 - Host 必须是 HTTPS 根地址，不能包含 userinfo、路径、查询或 fragment。
 - Host 的全部 DNS 结果必须是公网 IP；本机、私网、链路本地和保留地址均拒绝。
 - API Key 不进入部署环境，也不记录 MCP 请求/响应 payload。
+- MCP 容器关闭 access log，避免自身记录 Query API Key；外部 CDN、代理和 APM 仍可能记录 URL，因此 Header 始终是首选。
 - `mcp` 容器不发布 8211 端口，只允许由现有 Caddy 转发 `/mcp`。
 
 动态公网 Host 仍然意味着 MCP 服务拥有出站网络能力。生产网络层应继续限制容器访问云元数据地址和内部管理网段，作为 DNS rebinding 的纵深防御。

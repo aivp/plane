@@ -47,6 +47,35 @@ def test_request_config_reads_api_key_workspace_and_host_from_headers():
     assert config.api_host_url == "https://plane.example.com"
 
 
+def test_request_config_reads_query_values_and_uses_request_origin_as_host():
+    config = PlaneRequestConfig.from_headers(
+        {},
+        query_params={
+            "PLANE_API_KEY": "query_api_key",
+            "PLANE_WORKSPACE_SLUG": "aidong",
+        },
+        default_api_host_url="https://plane.example.com",
+        resolver=public_resolver,
+    )
+
+    assert config.api_key == "query_api_key"
+    assert config.workspace_slug == "aidong"
+    assert config.api_host_url == "https://plane.example.com"
+
+
+def test_request_config_rejects_conflicting_header_and_query_values():
+    with pytest.raises(InvalidPlaneRequestConfig, match="Conflicting"):
+        PlaneRequestConfig.from_headers(
+            {
+                "x-plane-api-key": "header_api_key",
+                "x-plane-workspace-slug": "aidong",
+                "x-plane-api-host-url": "https://plane.example.com",
+            },
+            query_params={"plane_api_key": "query_api_key"},
+            resolver=public_resolver,
+        )
+
+
 @pytest.mark.parametrize(
     "url",
     [

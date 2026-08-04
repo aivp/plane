@@ -158,7 +158,7 @@ https://<APP_DOMAIN>/god-mode/authentication/lark
 
 `mcp` 服务默认随 Compose 启动，由 Caddy 暴露在 `https://<APP_DOMAIN>/mcp`。部署端不配置、保存或固定任何 Plane API Key、Workspace Slug 或 Plane Host，也不需要 OAuth Client。
 
-每个调用方必须在每次 MCP HTTP 请求中发送三个 Header：
+推荐调用方在每次 MCP HTTP 请求中发送三个 Header：
 
 ```text
 X-Plane-Api-Key: <调用方的 API Key>
@@ -197,6 +197,49 @@ X-Plane-Api-Host-Url: https://<调用方的 Plane 域名>
 ```
 
 `mcp-remote` 的 `--header` 和环境变量替换语法见其[官方说明](https://github.com/geelen/mcp-remote#custom-headers)。API Key 应只放在调用方的密钥配置中，不要提交到仓库。
+
+### 原生 Streamable HTTP 与 Query 兼容模式
+
+原生支持 Remote MCP 的客户端应直接使用 `streamable-http` 连接，不需要 `mcp-remote`：
+
+```json
+{
+  "mcpServers": {
+    "plane": {
+      "type": "streamable-http",
+      "url": "https://plane.aidong-ai.com/mcp",
+      "headers": {
+        "X-Plane-Api-Key": "<你的 API_KEY>",
+        "X-Plane-Workspace-Slug": "aidong",
+        "X-Plane-Api-Host-Url": "https://plane.aidong-ai.com"
+      }
+    }
+  }
+}
+```
+
+如果调用平台不能发送自定义 Header，可使用 Query String 兼容模式：
+
+```json
+{
+  "mcpServers": {
+    "plane": {
+      "type": "streamable-http",
+      "url": "https://plane.aidong-ai.com/mcp?PLANE_API_KEY=<URL编码后的API_KEY>&PLANE_WORKSPACE_SLUG=aidong"
+    }
+  }
+}
+```
+
+当 Plane API 与 MCP 使用同一个域名时，可以省略 `PLANE_API_HOST_URL`，网关会从当前 MCP 请求推导 `https://plane.aidong-ai.com`。如果目标 Plane 是其它域名，再增加 URL 编码后的 `PLANE_API_HOST_URL`：
+
+```text
+&PLANE_API_HOST_URL=https%3A%2F%2Fother-plane.example.com
+```
+
+Query 参数名不区分大小写，也可写成 `plane_api_key`、`plane_workspace_slug` 和 `plane_api_host_url`。Header 和 Query 同时出现时必须值相同，否则请求会被拒绝。
+
+> 安全提示：URL Query 可能被客户端、CDN、反向代理或 APM 记录。MCP 容器已关闭 Uvicorn access log，但无法控制外部平台日志；支持 Header 时仍应优先使用 Header。不要把含真实 API Key 的完整 URL 提交到仓库、工单或聊天记录。
 
 ## 验证
 

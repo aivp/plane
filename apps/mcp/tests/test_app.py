@@ -77,6 +77,56 @@ def test_mcp_uses_only_the_three_values_from_the_current_request(monkeypatch):
     ]
 
 
+def test_mcp_accepts_query_values_and_infers_same_origin_plane_host():
+    validated: list[PlaneRequestConfig] = []
+
+    async def capture_credentials(config: PlaneRequestConfig) -> bool:
+        validated.append(config)
+        return True
+
+    app = create_app(api_key_validator=capture_credentials, resolver=public_resolver)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/mcp?PLANE_API_KEY=query-api-key&PLANE_WORKSPACE_SLUG=query-workspace",
+            headers={
+                "Host": "plane.example.com",
+                "X-Forwarded-Proto": "https",
+                "Accept": "application/json, text/event-stream",
+            },
+            json=INITIALIZE_REQUEST,
+        )
+
+    assert response.status_code == 200
+    assert validated == [
+        PlaneRequestConfig(
+            api_key="query-api-key",
+            workspace_slug="query-workspace",
+            api_host_url="https://plane.example.com",
+        )
+    ]
+
+
+def test_mcp_rejects_conflicting_header_and_query_api_keys():
+    validated: list[PlaneRequestConfig] = []
+
+    async def capture_credentials(config: PlaneRequestConfig) -> bool:
+        validated.append(config)
+        return True
+
+    app = create_app(api_key_validator=capture_credentials, resolver=public_resolver)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/mcp?PLANE_API_KEY=different-query-key",
+            headers=mcp_headers(),
+            json=INITIALIZE_REQUEST,
+        )
+
+    assert response.status_code in (401, 403)
+    assert validated == []
+
+
 def test_app_has_health_check_but_no_oauth_authorization_routes():
     async def accept_credentials(config: PlaneRequestConfig) -> bool:
         return True
