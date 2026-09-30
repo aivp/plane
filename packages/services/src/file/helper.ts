@@ -11,6 +11,7 @@ import type { TFileMetaDataLite, TFileSignedURLResponse } from "@plane/types";
 import { DANGEROUS_EXTENSIONS } from "@plane/constants";
 
 const FALLBACK_MIME_TYPES_BY_EXTENSION: Record<string, string> = {
+  bin: "application/octet-stream",
   csv: "text/csv",
   css: "text/css",
   gltf: "model/gltf+json",

@@ -17,3 +17,14 @@ describe("HTML attachment MIME detection", () => {
     });
   });
 });
+
+describe("Binary attachment MIME detection", () => {
+  test.each(["", "application/octet-stream"])(
+    "uses application/octet-stream for .bin firmware (browser MIME: %j)",
+    async (type) => {
+      const file = new File([new Uint8Array([0x13, 0x37, 0x00, 0xff])], "firmware-v3.4.3.45.bin", { type });
+
+      await expect(getFileMetaDataForUpload(file)).resolves.toMatchObject({ type: "application/octet-stream" });
+    }
+  );
+});
