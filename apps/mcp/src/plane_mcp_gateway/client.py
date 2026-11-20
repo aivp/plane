@@ -25,9 +25,3 @@ def get_caller_plane_client_context() -> upstream_client.PlaneClientContext:
         client=PlaneClient(base_url=api_host_url, api_key=access_token.token),
         workspace_slug=workspace_slug,
     )
-
-
-def install_dynamic_client_context() -> None:
-    """Install the request-scoped context before upstream tools are imported."""
-
-    upstream_client.get_plane_client_context = get_caller_plane_client_context

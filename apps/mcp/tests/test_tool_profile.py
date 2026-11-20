@@ -56,3 +56,24 @@ async def test_project_management_profile_hides_unused_or_unsupported_domains():
         "create_project_estimate",
     }.isdisjoint(tool_names)
     assert await mcp.get_tool("create_release") is None
+
+
+async def test_discovered_tools_match_v0211():
+    """逐个定位与旧网关的发现协议差异，覆盖参数、默认值、必填项和输出类型。"""
+    import hashlib
+    import json
+    from pathlib import Path
+
+    baseline = Path(__file__).parent / "fixtures" / "v0.2.11-tools.json"
+    expected = json.loads(baseline.read_text())
+    actual = {}
+    for tool in await create_app().state.fastmcp_server.list_tools():
+        definition = tool.to_mcp_tool()
+        payload = json.dumps(
+            definition.model_dump(mode="json", by_alias=True, exclude_none=True),
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        actual[tool.name] = hashlib.sha256(payload).hexdigest()
+    assert list(actual) == list(expected)
+    assert actual == expected

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Stateless Remote MCP gateway for caller-provided Plane credentials"
 requires-python = ">=3.11"
 dependencies = [
-    "plane-mcp-server @ https://github.com/makeplane/plane-mcp-server/archive/96cf4d51d65cfa5e47d10ff7a4a4caba3b7a98d1.tar.gz",
+    "plane-mcp-server @ https://github.com/makeplane/plane-mcp-server/archive/256e2f0f08c4fa0858061cc55754a3c9dba5a9c8.tar.gz",
     "uvicorn==0.41.0",
 ]
 

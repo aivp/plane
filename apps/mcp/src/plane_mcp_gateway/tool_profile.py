@@ -3,112 +3,110 @@
 from __future__ import annotations
 
 from fastmcp import FastMCP
-from fastmcp.server.transforms import Visibility
 
+from plane_mcp_gateway.compat import (
+    cycles,
+    intake,
+    labels,
+    modules,
+    pql,
+    projects,
+    states,
+    users,
+    work_item_activities,
+    work_item_attachments,
+    work_item_comments,
+    work_item_links,
+    work_item_relations,
+    work_items,
+    workspaces,
+)
 
-# The default interface is intentionally limited to project-management workflows
-# supported by this repository's Community API routes. Keep this explicit so a
-# future upstream dependency update cannot silently expose new tools.
+# 仅注册这些有明确签名的旧入口，不向调用方公开通用 action 分发器。
+# 保持旧目录的顺序，以便调用方复用稳定的工具提示。
+_PROJECT_MANAGEMENT_TOOLS = (
+    projects.list_projects,
+    projects.create_project,
+    projects.retrieve_project,
+    projects.update_project,
+    projects.delete_project,
+    projects.manage_project_archive,
+    projects.get_project_members,
+    work_items.list_work_items,
+    work_items.count_work_items,
+    work_items.create_work_item,
+    work_items.retrieve_work_item,
+    work_items.retrieve_work_item_by_identifier,
+    work_items.update_work_item,
+    work_items.delete_work_item,
+    work_items.manage_work_item_assignee,
+    work_items.manage_work_item_label,
+    work_items.list_archived_work_items,
+    work_items.manage_work_item_archive,
+    work_items.search_work_items,
+    work_item_activities.list_work_item_activities,
+    work_item_activities.retrieve_work_item_activity,
+    work_item_attachments.list_work_item_attachments,
+    work_item_attachments.get_work_item_attachment_download_url,
+    work_item_attachments.upload_work_item_attachment_from_url,
+    work_item_attachments.delete_work_item_attachment,
+    work_item_attachments.read_work_item_attachment,
+    work_item_comments.list_work_item_comments,
+    work_item_comments.retrieve_work_item_comment,
+    work_item_comments.create_work_item_comment,
+    work_item_comments.update_work_item_comment,
+    work_item_comments.delete_work_item_comment,
+    work_item_links.list_work_item_links,
+    work_item_links.retrieve_work_item_link,
+    work_item_links.create_work_item_link,
+    work_item_links.update_work_item_link,
+    work_item_links.delete_work_item_link,
+    work_item_relations.list_work_item_relations,
+    work_item_relations.create_work_item_relation,
+    work_item_relations.remove_work_item_relation,
+    cycles.list_cycles,
+    cycles.create_cycle,
+    cycles.retrieve_cycle,
+    cycles.update_cycle,
+    cycles.delete_cycle,
+    cycles.manage_cycle_work_items,
+    cycles.list_cycle_work_items,
+    cycles.transfer_cycle_work_items,
+    cycles.manage_cycle_archive,
+    cycles.complete_cycle,
+    users.get_me,
+    modules.list_modules,
+    modules.create_module,
+    modules.retrieve_module,
+    modules.update_module,
+    modules.delete_module,
+    modules.manage_module_work_items,
+    modules.list_module_work_items,
+    modules.manage_module_archive,
+    intake.list_intake_work_items,
+    intake.create_intake_work_item,
+    intake.retrieve_intake_work_item,
+    intake.update_intake_work_item,
+    intake.delete_intake_work_item,
+    labels.list_labels,
+    labels.create_label,
+    labels.retrieve_label,
+    labels.update_label,
+    labels.delete_label,
+    states.list_states,
+    states.create_state,
+    states.retrieve_state,
+    states.update_state,
+    states.delete_state,
+    workspaces.get_workspace_members,
+    pql.get_pql_reference,
+)
 PROJECT_MANAGEMENT_TOOL_NAMES = frozenset(
-    {
-        # Identity and membership
-        "get_me",
-        "get_workspace_members",
-        # Projects
-        "list_projects",
-        "create_project",
-        "retrieve_project",
-        "update_project",
-        "delete_project",
-        "manage_project_archive",
-        "get_project_members",
-        # Work items
-        "list_work_items",
-        "count_work_items",
-        "create_work_item",
-        "retrieve_work_item",
-        "retrieve_work_item_by_identifier",
-        "update_work_item",
-        "delete_work_item",
-        "manage_work_item_assignee",
-        "manage_work_item_label",
-        "list_archived_work_items",
-        "manage_work_item_archive",
-        "search_work_items",
-        # Cycles
-        "list_cycles",
-        "create_cycle",
-        "retrieve_cycle",
-        "update_cycle",
-        "delete_cycle",
-        "manage_cycle_work_items",
-        "list_cycle_work_items",
-        "transfer_cycle_work_items",
-        "manage_cycle_archive",
-        "complete_cycle",
-        # Modules
-        "list_modules",
-        "create_module",
-        "retrieve_module",
-        "update_module",
-        "delete_module",
-        "manage_module_work_items",
-        "list_module_work_items",
-        "manage_module_archive",
-        # Intake
-        "list_intake_work_items",
-        "create_intake_work_item",
-        "retrieve_intake_work_item",
-        "update_intake_work_item",
-        "delete_intake_work_item",
-        # Labels and states
-        "list_labels",
-        "create_label",
-        "retrieve_label",
-        "update_label",
-        "delete_label",
-        "list_states",
-        "create_state",
-        "retrieve_state",
-        "update_state",
-        "delete_state",
-        # Comments and activity
-        "list_work_item_comments",
-        "retrieve_work_item_comment",
-        "create_work_item_comment",
-        "update_work_item_comment",
-        "delete_work_item_comment",
-        "list_work_item_activities",
-        "retrieve_work_item_activity",
-        # Attachments
-        "list_work_item_attachments",
-        "get_work_item_attachment_download_url",
-        "upload_work_item_attachment_from_url",
-        "delete_work_item_attachment",
-        "read_work_item_attachment",
-        # Links and relations
-        "list_work_item_links",
-        "retrieve_work_item_link",
-        "create_work_item_link",
-        "update_work_item_link",
-        "delete_work_item_link",
-        "list_work_item_relations",
-        "create_work_item_relation",
-        "remove_work_item_relation",
-        # Query language help
-        "get_pql_reference",
-    }
+    fn.__name__ for fn in _PROJECT_MANAGEMENT_TOOLS
 )
 
 
 def apply_project_management_tool_profile(mcp: FastMCP) -> None:
-    """Expose only the default internal project-management tool interface."""
-
-    mcp.add_transform(Visibility(False, components={"tool"}))
-    mcp.add_transform(
-        Visibility(
-            True,
-            names=set(PROJECT_MANAGEMENT_TOOL_NAMES),
-            components={"tool"},
-        )
-    )
+    """把白名单直接注册为可发现、可调用的 MCP 工具。"""
+    for fn in _PROJECT_MANAGEMENT_TOOLS:
+        mcp.tool(fn)
