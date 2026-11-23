@@ -269,10 +269,10 @@ export class WorkspaceService extends APIService {
       });
   }
 
-  async getViewIssues(workspaceSlug: string, params: any, config = {}): Promise<TIssuesResponse> {
-    const path = params.expand?.includes("issue_relation")
-      ? `/api/workspaces/${workspaceSlug}/issues-detail/`
-      : `/api/workspaces/${workspaceSlug}/issues/`;
+  async getViewIssues(workspaceSlug: string, viewId: string, params: any, config = {}): Promise<TIssuesResponse> {
+    // 独立入口在服务端限定当前用户；首次加载、翻页和刷新共用这一路径。
+    const issueEndpoint = params.expand?.includes("issue_relation") ? "issues-detail" : "issues";
+    const path = `/api/workspaces/${workspaceSlug}/${viewId === "my-todos" ? "my-todos" : issueEndpoint}/`;
     return this.get(
       path,
       {

@@ -48,6 +48,13 @@ urlpatterns = [
         ),
         name="global-view",
     ),
+    # 与工作区视图共用权限和分页，待办条件仅由路由指定。
+    path(
+        "workspaces/<str:slug>/my-todos/",
+        WorkspaceViewIssuesViewSet.as_view({"get": "list"}),
+        {"my_todos": True},
+        name="workspace-my-todos",
+    ),
     path(
         "workspaces/<str:slug>/issues/",
         WorkspaceViewIssuesViewSet.as_view({"get": "list"}),

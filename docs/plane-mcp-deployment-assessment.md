@@ -41,7 +41,7 @@ flowchart LR
 ## 安全边界
 
 - MCP 入口没有 OAuth 授权、回调或 token storage 路由。
-- API Key 会先请求调用方 Host 的 `/api/v1/users/me/` 进行验证。
+- 网关通过调用方 Host 的 `/api/v1/users/me/` 校验凭据。同一进程合并相同站点、工作区及密钥的并发校验，成功结果可复用 15 秒。Plane 对业务 API 逐次鉴权。上游校验限流时，网关返回 HTTP 429 并传递 Plane 提供的 `Retry-After`。
 - Host 必须是 HTTPS 根地址，不能包含 userinfo、路径、查询或 fragment。
 - Host 的全部 DNS 结果必须是公网 IP；本机、私网、链路本地和保留地址均拒绝。
 - API Key 不进入部署环境，也不记录 MCP 请求/响应 payload。
@@ -63,7 +63,7 @@ flowchart LR
 
 ## 兼容范围
 
-上游锁定版本共注册 177 个工具。默认 Remote MCP 在服务器端使用显式 allowlist，只暴露与本项目 Community API 和内部项目管理相关的 75 个工具：
+上游锁定版本共注册 177 个工具。默认 Remote MCP 在服务器端使用显式 allowlist，只暴露与本项目 Community API 和内部项目管理相关的 75 个兼容工具和一个本地待办链接工具：
 
 | 领域                 | 工具数 |
 | -------------------- | -----: |
@@ -80,7 +80,8 @@ flowchart LR
 | Relations            |      3 |
 | Activities           |      2 |
 | User、Workspace、PQL |      3 |
-| 合计                 |     75 |
+| 个人待办链接         |      1 |
+| 合计                 |     76 |
 
 默认隐藏 102 个工具，涉及 Release、Customer、Initiative、Milestone、Page、自定义属性、Work item type、自定义关系定义、Work log、Role、项目估算和 Feature 管理。这些领域不属于当前内部项目管理主流程，其中多数也没有出现在当前 Community 公共 API 路由中。
 

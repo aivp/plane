@@ -10,7 +10,7 @@ async def test_default_mcp_exposes_exact_project_management_tool_profile():
     tools = await app.state.fastmcp_server.list_tools(run_middleware=False)
     tool_names = {tool.name for tool in tools}
 
-    assert len(tools) == 75
+    assert len(tools) == 76
     assert len(tools) <= 80
     assert tool_names == PROJECT_MANAGEMENT_TOOL_NAMES
 
@@ -75,5 +75,7 @@ async def test_discovered_tools_match_v0211():
             separators=(",", ":"),
         ).encode()
         actual[tool.name] = hashlib.sha256(payload).hexdigest()
+    # 单独验证新增入口，其余 75 个工具仍与旧协议完全匹配。
+    actual.pop("get_my_todos_link")
     assert list(actual) == list(expected)
     assert actual == expected

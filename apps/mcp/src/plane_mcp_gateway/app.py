@@ -33,7 +33,8 @@ def create_app(
         "Plane Remote MCP",
         instructions=(
             "Use the Plane host, workspace, and API key supplied by the caller for this request. "
-            "The gateway does not store Plane credentials."
+            "For personal to-do requests (我的待办), call get_my_todos_link and reply with its link directly. "
+            "Do not list projects or tasks for this request."
         ),
         auth=CallerPlaneTokenVerifier(
             api_key_validator=api_key_validator, resolver=resolver

@@ -880,6 +880,7 @@
     "other": "Other"
   },
   "default_global_view": {
+    "my_todos": "My to-do items",
     "all_issues": "All work items",
     "assigned": "Assigned",
     "created": "Created",

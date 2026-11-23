@@ -181,6 +181,10 @@ export const DEFAULT_GLOBAL_VIEWS_LIST: {
     i18n_label: "default_global_view.assigned",
   },
   {
+    key: "my-todos",
+    i18n_label: "default_global_view.my_todos",
+  },
+  {
     key: "created",
     i18n_label: "default_global_view.created",
   },

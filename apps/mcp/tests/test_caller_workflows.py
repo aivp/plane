@@ -404,3 +404,15 @@ def test_delete_with_empty_identifier_fails(gateway):
         },
     )
     assert result["isError"]
+
+
+def test_my_todos_link_does_not_read_plane_work_items(gateway, monkeypatch):
+    # 生成链接不应使用共享密钥读取任务或机器人身份。
+    def unexpected_api_call(*args, **kwargs):
+        pytest.fail("生成待办链接时访问了 Plane 业务 API")
+
+    monkeypatch.setattr(requests.Session, "send", unexpected_api_call)
+    result = call(gateway, "get_my_todos_link")
+    assert result["content"][0]["text"] == (
+        "[打开我的待办](https://plane.example.com/caller-workspace/workspace-views/my-todos/)"
+    )

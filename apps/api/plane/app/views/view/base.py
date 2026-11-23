@@ -37,6 +37,7 @@ from plane.db.models import (
     CycleIssue,
     UserRecentVisit,
     IssueAssignee,
+    StateGroup,
     IssueLabel,
     ModuleIssue,
 )
@@ -165,6 +166,7 @@ class WorkspaceViewIssuesViewSet(BaseViewSet):
             Q(project__project_projectmember__role__gt=5),
             project__project_projectmember__member=self.request.user,
             project__project_projectmember__is_active=True,
+            project__project_projectmember__deleted_at__isnull=True,
         )
 
     def apply_annotations(self, issues):
@@ -220,7 +222,7 @@ class WorkspaceViewIssuesViewSet(BaseViewSet):
 
     @method_decorator(gzip_page)
     @allow_permission(allowed_roles=[ROLE.ADMIN, ROLE.MEMBER, ROLE.GUEST], level="WORKSPACE")
-    def list(self, request, slug):
+    def list(self, request, slug, my_todos=False):
         issue_queryset = self.get_queryset()
 
         # Apply filtering from filterset
@@ -231,6 +233,15 @@ class WorkspaceViewIssuesViewSet(BaseViewSet):
         # Apply legacy filters
         filters = issue_filters(request.query_params, "GET")
         issue_queryset = issue_queryset.filter(**filters)
+
+        # 以当前登录者的有效指派为准，排除已完成、已取消的任务；后续继续执行项目权限检查。
+        if my_todos:
+            issue_queryset = issue_queryset.filter(
+                issue_assignee__assignee=request.user,
+                issue_assignee__deleted_at__isnull=True,
+                state__group__in=(StateGroup.BACKLOG, StateGroup.UNSTARTED, StateGroup.STARTED),
+                project__deleted_at__isnull=True,
+            )
 
         # Get common project permission filters
         permission_filters = self._get_project_permission_filters()

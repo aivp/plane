@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastmcp import FastMCP
 
+from plane_mcp_gateway.client import get_my_todos_link
 from plane_mcp_gateway.compat import (
     cycles,
     intake,
@@ -100,6 +101,7 @@ _PROJECT_MANAGEMENT_TOOLS = (
     states.delete_state,
     workspaces.get_workspace_members,
     pql.get_pql_reference,
+    get_my_todos_link,
 )
 PROJECT_MANAGEMENT_TOOL_NAMES = frozenset(
     fn.__name__ for fn in _PROJECT_MANAGEMENT_TOOLS

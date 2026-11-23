@@ -194,3 +194,74 @@ def test_tool_call_builds_plane_client_from_the_current_request(monkeypatch):
         "Content-Type": "application/json",
         "X-Api-Key": "caller-api-key",
     }
+
+
+def test_auth_preserves_upstream_throttling_and_retries_after_recovery(monkeypatch):
+    import httpx
+
+    # 先触发限流，随后撤销或恢复凭据，检查三种状态互不混淆。
+    statuses = iter([429, 401, 200])
+
+    async def get(client, url, **kwargs):
+        assert url.endswith("/api/v1/users/me/")
+        return httpx.Response(next(statuses), headers={"Retry-After": "17"})
+
+    monkeypatch.setattr(httpx.AsyncClient, "get", get)
+    with TestClient(create_app(resolver=public_resolver)) as client:
+        def initialize():
+            return client.post("/mcp", headers=mcp_headers(), json=INITIALIZE_REQUEST)
+
+        limited = initialize()
+        assert limited.status_code == 429
+        assert limited.headers["Retry-After"] == "17"
+        assert initialize().status_code == 401
+        assert initialize().status_code == 200
+
+
+def test_auth_coalesces_parallel_requests_and_isolates_credentials():
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
+    validated = []
+
+    async def validate(config):
+        validated.append(config)
+        await asyncio.sleep(0.04)
+        return True
+
+    with TestClient(create_app(api_key_validator=validate, resolver=public_resolver)) as client:
+        def initialize(headers):
+            return client.post("/mcp", headers=headers, json=INITIALIZE_REQUEST).status_code
+
+        # 同时握手、发现与调用工具共享验证结果；切换租户或密钥时需重新验证。
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            assert list(pool.map(initialize, [mcp_headers()] * 8)) == [200] * 8
+        assert len(validated) == 1
+        for field, value in [
+            ("X-Plane-Api-Key", "second-key"),
+            ("X-Plane-Api-Host-Url", "https://other.example.com"),
+            ("X-Plane-Workspace-Slug", "other-workspace"),
+        ]:
+            assert initialize(mcp_headers(**{field: value})) == 200
+        assert len(validated) == 4
+
+
+def test_revoked_key_is_rechecked_after_short_auth_cache(monkeypatch):
+    from plane_mcp_gateway import auth
+
+    # 缓存仅复用近期的握手结果，到期后必须重新验证已撤销的密钥。
+    now = 100.0
+    accepted = True
+
+    async def validate(config):
+        return accepted
+
+    monkeypatch.setattr(auth, "monotonic", lambda: now)
+    with TestClient(create_app(api_key_validator=validate, resolver=public_resolver)) as client:
+        def initialize():
+            return client.post("/mcp", headers=mcp_headers(), json=INITIALIZE_REQUEST).status_code
+
+        assert initialize() == 200
+        accepted = False
+        now += 16
+        assert initialize() == 401

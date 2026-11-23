@@ -314,7 +314,7 @@ export class WorkspaceIssuesFilter extends IssueFilterHelperStore implements IWo
 
           this.rootIssueStore.workspaceIssues.fetchIssuesWithExistingPagination(workspaceSlug, viewId, "mutation");
 
-          if (["all-issues", "assigned", "created", "subscribed"].includes(viewId))
+          if (STATIC_VIEW_TYPES.includes(viewId))
             this.handleIssuesLocalFilters.set(EIssuesStoreType.GLOBAL, type, workspaceSlug, undefined, viewId, {
               display_filters: _filters.displayFilters,
             });
@@ -332,7 +332,7 @@ export class WorkspaceIssuesFilter extends IssueFilterHelperStore implements IWo
                 updatedDisplayProperties[_key as keyof IIssueDisplayProperties]
               );
             });
-            if (["all-issues", "assigned", "created", "subscribed"].includes(viewId))
+            if (STATIC_VIEW_TYPES.includes(viewId))
               this.handleIssuesLocalFilters.set(EIssuesStoreType.GLOBAL, type, workspaceSlug, undefined, viewId, {
                 display_properties: _filters.displayProperties,
               });

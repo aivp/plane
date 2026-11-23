@@ -880,6 +880,7 @@
     "other": "其他"
   },
   "default_global_view": {
+    "my_todos": "我的待辦",
     "all_issues": "所有工作事項",
     "assigned": "已指派",
     "created": "已建立",
