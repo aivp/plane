@@ -6,6 +6,7 @@
 
 import { set } from "lodash-es";
 import { action, makeObservable, observable, runInAction } from "mobx";
+import { mutate } from "swr";
 // services
 import type { EIssueServiceType } from "@plane/types";
 import { IssueService } from "@/services/issue/issue.service";
@@ -86,6 +87,7 @@ export class IssueSubscriptionStore implements IIssueSubscriptionStore {
       });
 
       await this.issueService.subscribeToIssueNotifications(workspaceSlug, projectId, issueId);
+      void mutate(this.issueService.subscriberIdsUrl(workspaceSlug, projectId, issueId));
     } catch (error) {
       this.fetchSubscriptions(workspaceSlug, projectId, issueId);
       throw error;
@@ -102,6 +104,7 @@ export class IssueSubscriptionStore implements IIssueSubscriptionStore {
       });
 
       await this.issueService.unsubscribeFromIssueNotifications(workspaceSlug, projectId, issueId);
+      void mutate(this.issueService.subscriberIdsUrl(workspaceSlug, projectId, issueId));
     } catch (error) {
       this.fetchSubscriptions(workspaceSlug, projectId, issueId);
       throw error;

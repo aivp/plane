@@ -201,6 +201,8 @@
       "error": "Kesalahan saat menghapus item kerja"
     },
     "subscription": {
+      "subscribers": "Pelanggan",
+      "add_subscribers": "Tambah pelanggan",
       "actions": {
         "subscribed": "Item kerja telah berhasil disubscribe",
         "unsubscribed": "Item kerja telah berhasil dibatalkan subscribe"

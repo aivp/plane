@@ -375,6 +375,36 @@ export class IssueService extends APIService {
   }
 
   // issue subscriptions
+  subscriberIdsUrl(workspaceSlug: string, projectId: string, issueId: string): string {
+    return `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/issue-subscriber-ids/`;
+  }
+
+  async getSubscriberIds(workspaceSlug: string, projectId: string, issueId: string): Promise<string[]> {
+    const response = await this.get(this.subscriberIdsUrl(workspaceSlug, projectId, issueId));
+    return response.data;
+  }
+
+  async updateSubscribers(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string,
+    previousIds: string[],
+    selectedIds: string[]
+  ): Promise<void> {
+    const url = `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/issue-subscribers/`;
+    const previous = new Set(previousIds);
+    const selected = new Set(selectedIds);
+    // Only send the user's changes so concurrent edits to other subscribers are preserved.
+    const additions = [...selected].filter((id) => !previous.has(id));
+    const removals = [...previous].filter((id) => !selected.has(id));
+    const results = await Promise.allSettled([
+      ...additions.map((id) => this.post(url, { subscriber: id })),
+      ...removals.map((id) => this.delete(`${url}${id}/`)),
+    ]);
+    const failed = results.find((result) => result.status === "rejected");
+    if (failed) throw failed.reason;
+  }
+
   async getIssueNotificationSubscriptionStatus(
     workspaceSlug: string,
     projectId: string,

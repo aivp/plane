@@ -201,6 +201,8 @@
       "error": "Đã xảy ra lỗi khi xóa mục công việc"
     },
     "subscription": {
+      "subscribers": "Người theo dõi",
+      "add_subscribers": "Thêm người theo dõi",
       "actions": {
         "subscribed": "Đã đăng ký mục công việc thành công",
         "unsubscribed": "Đã hủy đăng ký mục công việc thành công"

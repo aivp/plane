@@ -279,17 +279,18 @@ def notifications(
             """
 
             # ---------------------------------------------------------------------------------------------------------
+            issue = Issue.objects.select_related("project").filter(pk=issue_id, project_id=project_id).first()
+            if issue is None:
+                return
             issue_subscribers = list(
                 IssueSubscriber.objects.filter(
                     project_id=project_id,
                     issue_id=issue_id,
-                    subscriber__in=Subquery(project_members),
+                    subscriber_id__in=issue.get_subscription_members().values("member_id"),
                 )
                 .exclude(subscriber_id__in=list(new_mentions + comment_mentions + [actor_id]))
                 .values_list("subscriber", flat=True)
             )
-
-            issue = Issue.objects.filter(pk=issue_id).first()
 
             if subscriber:
                 # add the user to issue subscriber
@@ -300,7 +301,7 @@ def notifications(
                 except Exception:
                     pass
 
-            project = Project.objects.get(pk=project_id)
+            project = issue.project
 
             issue_assignees = IssueAssignee.objects.filter(
                 issue_id=issue_id,
@@ -318,7 +319,10 @@ def notifications(
                 else:
                     sender = "in_app:issue_activities:subscribed"
 
-                preference = UserNotificationPreference.objects.get(user_id=subscriber)
+                preference = UserNotificationPreference.objects.filter(user_id=subscriber).first()
+                # Bot accounts can have subscriptions without notification preferences.
+                if preference is None:
+                    continue
 
                 for issue_activity in issue_activities_created:
                     # If activity done in blocking then blocked by email should not go

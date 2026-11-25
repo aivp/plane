@@ -201,6 +201,8 @@
       "error": "Erro ao excluir item de trabalho"
     },
     "subscription": {
+      "subscribers": "Inscritos",
+      "add_subscribers": "Adicionar inscritos",
       "actions": {
         "subscribed": "Item de trabalho inscrito com sucesso",
         "unsubscribed": "Item de trabalho não inscrito com sucesso"

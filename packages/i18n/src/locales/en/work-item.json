@@ -201,6 +201,8 @@
       "error": "Error deleting work item"
     },
     "subscription": {
+      "subscribers": "Subscribers",
+      "add_subscribers": "Add subscribers",
       "actions": {
         "subscribed": "Work item subscribed successfully",
         "unsubscribed": "Work item unsubscribed successfully"

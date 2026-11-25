@@ -201,6 +201,8 @@
       "error": "Fehler beim Löschen des Arbeitselements"
     },
     "subscription": {
+      "subscribers": "Abonnenten",
+      "add_subscribers": "Abonnenten hinzufügen",
       "actions": {
         "subscribed": "Arbeitselement erfolgreich abonniert",
         "unsubscribed": "Abo für Arbeitselement beendet"

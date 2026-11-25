@@ -20,7 +20,7 @@ from plane.utils.html_processor import strip_tags
 from plane.utils.path_validator import sanitize_filename
 from plane.db.mixins import SoftDeletionManager, ChangeTrackerMixin
 from plane.utils.exception_logger import log_exception
-from .project import ProjectBaseModel
+from .project import ROLE, ProjectBaseModel, ProjectMember
 from .base import BaseModel
 from plane.utils.uuid import convert_uuid_to_integer
 from .description import Description
@@ -177,6 +177,21 @@ class Issue(ChangeTrackerMixin, ProjectBaseModel):
         verbose_name_plural = "Issues"
         db_table = "issues"
         ordering = ("-created_at",)
+
+    def get_subscription_members(self):
+        """Active project members who can view this work item and its subscription updates."""
+        members = ProjectMember.objects.filter(
+            project_id=self.project_id,
+            workspace_id=self.workspace_id,
+            is_active=True,
+            member__is_active=True,
+            member__member_workspace__workspace_id=self.workspace_id,
+            member__member_workspace__is_active=True,
+            member__member_workspace__deleted_at__isnull=True,
+        )
+        if not self.project.guest_view_all_features:
+            members = members.filter(~Q(role=ROLE.GUEST.value) | Q(member_id=self.created_by_id))
+        return members
 
     def save(self, *args, **kwargs):
         self._ensure_default_state()

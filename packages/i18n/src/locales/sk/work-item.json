@@ -201,6 +201,8 @@
       "error": "Chyba pri mazaní pracovnej položky"
     },
     "subscription": {
+      "subscribers": "Odberatelia",
+      "add_subscribers": "Pridať odberateľov",
       "actions": {
         "subscribed": "Pracovná položka úspešne prihlásená na odber",
         "unsubscribed": "Odber pracovnej položky zrušený"

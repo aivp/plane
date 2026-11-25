@@ -201,6 +201,8 @@
       "error": "Error al eliminar el elemento de trabajo"
     },
     "subscription": {
+      "subscribers": "Suscriptores",
+      "add_subscribers": "Añadir suscriptores",
       "actions": {
         "subscribed": "Suscrito al elemento de trabajo correctamente",
         "unsubscribed": "Desuscrito del elemento de trabajo correctamente"

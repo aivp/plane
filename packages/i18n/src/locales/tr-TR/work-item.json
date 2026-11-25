@@ -201,6 +201,8 @@
       "error": "İş öğesi silinirken hata oluştu"
     },
     "subscription": {
+      "subscribers": "Aboneler",
+      "add_subscribers": "Abone ekle",
       "actions": {
         "subscribed": "İş öğesine abone olundu",
         "unsubscribed": "İş öğesi aboneliği sonlandırıldı"

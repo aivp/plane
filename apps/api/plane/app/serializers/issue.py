@@ -38,6 +38,7 @@ from plane.db.models import (
     IssueVote,
     IssueRelation,
     State,
+    StateGroup,
     IssueVersion,
     IssueDescriptionVersion,
     ProjectMember,
@@ -942,12 +943,17 @@ class IssueDetailSerializer(IssueSerializer):
     description_html = serializers.CharField()
     is_subscribed = serializers.BooleanField(read_only=True)
     is_intake = serializers.BooleanField(read_only=True)
+    is_triage = serializers.SerializerMethodField()
+
+    def get_is_triage(self, obj):
+        return obj.state_id is not None and obj.state.group == StateGroup.TRIAGE
 
     class Meta(IssueSerializer.Meta):
         fields = IssueSerializer.Meta.fields + [
             "description_html",
             "is_subscribed",
             "is_intake",
+            "is_triage",
         ]
         read_only_fields = fields
 
@@ -976,6 +982,10 @@ class IssuePublicSerializer(BaseSerializer):
             "votes",
         ]
         read_only_fields = fields
+
+
+class IssueSubscriberCreateSerializer(serializers.Serializer):
+    subscriber = serializers.UUIDField()
 
 
 class IssueSubscriberSerializer(BaseSerializer):

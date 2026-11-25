@@ -201,6 +201,8 @@
       "error": "删除工作项时出错"
     },
     "subscription": {
+      "subscribers": "知会人",
+      "add_subscribers": "添加知会人",
       "actions": {
         "subscribed": "工作项订阅成功",
         "unsubscribed": "工作项取消订阅成功"

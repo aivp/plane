@@ -42,6 +42,7 @@ import { IssueAgentTaskProperty } from "../issue-detail/agent-task";
 import { IssueCycleSelect } from "../issue-detail/cycle-select";
 import { IssueLabel } from "../issue-detail/label";
 import { IssueModuleSelect } from "../issue-detail/module-select";
+import { IssueSubscribersProperty } from "../issue-detail/subscribers";
 
 interface IPeekOverviewProperties {
   workspaceSlug: string;
@@ -111,6 +112,15 @@ export const PeekOverviewProperties = observer(function PeekOverviewProperties(p
             dropdownArrowClassName="h-3.5 w-3.5 hidden group-hover:inline"
           />
         </SidebarPropertyListItem>
+
+        <IssueSubscribersProperty
+          workspaceSlug={workspaceSlug}
+          projectId={projectId}
+          issueId={issueId}
+          disabled={
+            disabled || issue.is_draft || !!issue.is_triage || !!issue.archived_at || !!projectDetails?.archived_at
+          }
+        />
 
         <SidebarPropertyListItem icon={PriorityPropertyIcon} label={t("common.priority")}>
           <PriorityDropdown

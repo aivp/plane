@@ -201,6 +201,8 @@
       "error": "Erreur lors de la suppression de l’élément de travail"
     },
     "subscription": {
+      "subscribers": "Abonnés",
+      "add_subscribers": "Ajouter des abonnés",
       "actions": {
         "subscribed": "Abonnement à l’élément de travail réussi",
         "unsubscribed": "Désabonnement de l’élément de travail réussi"

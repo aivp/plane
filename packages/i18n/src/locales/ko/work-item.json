@@ -201,6 +201,8 @@
       "error": "작업 항목 삭제 중 오류 발생"
     },
     "subscription": {
+      "subscribers": "구독자",
+      "add_subscribers": "구독자 추가",
       "actions": {
         "subscribed": "작업 항목이 성공적으로 구독되었습니다",
         "unsubscribed": "작업 항목 구독이 성공적으로 취소되었습니다"

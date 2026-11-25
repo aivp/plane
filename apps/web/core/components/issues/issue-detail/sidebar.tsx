@@ -43,6 +43,7 @@ import { IssueAgentTaskProperty } from "./agent-task";
 import { IssueLabel } from "./label";
 import { IssueModuleSelect } from "./module-select";
 import type { TIssueOperations } from "./root";
+import { IssueSubscribersProperty } from "./subscribers";
 
 type Props = {
   workspaceSlug: string;
@@ -116,6 +117,19 @@ export const IssueDetailsSidebar = observer(function IssueDetailsSidebar(props: 
                 dropdownArrowClassName="h-3.5 w-3.5 hidden group-hover:inline"
               />
             </SidebarPropertyListItem>
+
+            <IssueSubscribersProperty
+              workspaceSlug={workspaceSlug}
+              projectId={projectId}
+              issueId={issueId}
+              disabled={
+                !isEditable ||
+                issue.is_draft ||
+                !!issue.is_triage ||
+                !!issue.archived_at ||
+                !!projectDetails?.archived_at
+              }
+            />
 
             <SidebarPropertyListItem icon={PriorityPropertyIcon} label={t("common.priority")}>
               <PriorityDropdown

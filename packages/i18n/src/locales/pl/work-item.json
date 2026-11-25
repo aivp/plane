@@ -201,6 +201,8 @@
       "error": "Błąd podczas usuwania elementu pracy"
     },
     "subscription": {
+      "subscribers": "Subskrybenci",
+      "add_subscribers": "Dodaj subskrybentów",
       "actions": {
         "subscribed": "Subskrypcja elementu pracy powiodła się",
         "unsubscribed": "Anulowano subskrypcję elementu pracy"

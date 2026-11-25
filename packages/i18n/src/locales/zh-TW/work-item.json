@@ -201,6 +201,8 @@
       "error": "刪除工作事項時發生錯誤"
     },
     "subscription": {
+      "subscribers": "知會人",
+      "add_subscribers": "新增知會人",
       "actions": {
         "subscribed": "已成功訂閱工作事項",
         "unsubscribed": "已成功取消訂閱工作事項"

@@ -201,6 +201,8 @@
       "error": "Eroare la ștergerea activității"
     },
     "subscription": {
+      "subscribers": "Abonați",
+      "add_subscribers": "Adaugă abonați",
       "actions": {
         "subscribed": "Abonarea la activitate realizată cu succes",
         "unsubscribed": "Dezabonarea de la activitate realizată cu succes"

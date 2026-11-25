@@ -201,6 +201,8 @@
       "error": "Errore nell'eliminazione dell'elemento di lavoro"
     },
     "subscription": {
+      "subscribers": "Iscritti",
+      "add_subscribers": "Aggiungi iscritti",
       "actions": {
         "subscribed": "Iscrizione all'elemento di lavoro avvenuta con successo",
         "unsubscribed": "Disiscrizione dall'elemento di lavoro avvenuta con successo"
